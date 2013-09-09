@@ -51,8 +51,8 @@ def _remote_check(channel, cmd):
 
 def check(conn, command, exit=False):
     """
-    Execute a remote command with ``subprocess.Popen`` but report back the results
-    in a tuple with three items: stdout, stderr, and exit status.
+    Execute a remote command with ``subprocess.Popen`` but report back the
+    results in a tuple with three items: stdout, stderr, and exit status.
 
     This helper function *does not* provide any logging as it is the caller's
     responsibility to do so.
