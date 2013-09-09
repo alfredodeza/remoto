@@ -1,5 +1,6 @@
 import sys
 import execnet
+from remoto.log import reporting
 
 
 def remote_run(channel, cmd):
@@ -30,12 +31,5 @@ def remote_run(channel, cmd):
 
 def run(conn, command):
     result = conn.execute(remote_run, cmd=command)
-    while True:
-        try:
-            log_map = {'debug': conn.logger.debug, 'error': conn.logger.error}
-            received = result.receive()
-            level_received, message = received.items()[0]
-            log_map[level_received](message.strip('\n'))
-        except EOFError:
-            break
+    reporting(conn, result)
     conn.exit()
