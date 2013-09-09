@@ -1,4 +1,5 @@
-import execnet
+from remoto.lib import execnet
+
 
 #
 # Connection Object
