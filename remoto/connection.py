@@ -1,4 +1,4 @@
-from remoto.lib import execnet
+from .lib import execnet
 
 
 #
