@@ -27,3 +27,6 @@ class FakeRemoteLogger:
 
     def debug(self, *a, **kw):
         pass
+
+    def info(self, *a, **kw):
+        pass
