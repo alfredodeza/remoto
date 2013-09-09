@@ -7,10 +7,11 @@ from remoto.lib import execnet
 
 class Connection(object):
 
-    def __init__(self, hostname, logger=None):
+    def __init__(self, hostname, logger=None, sudo=False):
         self.hostname = hostname
         self.gateway = execnet.makegateway('ssh=%s' % hostname)
         self.logger = logger or FakeRemoteLogger()
+        self.sudo = sudo
 
     def execute(self, function, **kw):
         return self.gateway.remote_exec(function, **kw)
