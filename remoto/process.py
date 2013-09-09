@@ -1,9 +1,7 @@
-import sys
-import execnet
 from remoto.log import reporting
 
 
-def remote_run(channel, cmd):
+def _remote_run(channel, cmd):
     import subprocess
     import sys
 
@@ -29,7 +27,37 @@ def remote_run(channel, cmd):
                 sys.stdout.flush()
 
 
-def run(conn, command):
-    result = conn.execute(remote_run, cmd=command)
+def run(conn, command, exit=False):
+    """
+    A real-time-logging implementation of a remote subprocess.Popen call where
+    a command is just executed on the remote end and no other handling is done.
+    """
+    result = conn.execute(_remote_run, cmd=command)
     reporting(conn, result)
-    conn.exit()
+    if exit:
+        conn.exit()
+
+
+def _remote_check(channel, cmd):
+    import subprocess
+
+    process = subprocess.Popen(
+        cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE
+    )
+    stdout = process.stdout.readlines()
+    stderr = process.stderr.readlines()
+    channel.send((stdout, stderr, process.wait()))
+
+
+def check(conn, command, exit=False):
+    """
+    Execute a remote command with ``subprocess.Popen`` but report back the results
+    in a tuple with three items: stdout, stderr, and exit status.
+
+    This helper function *does not* provide any logging as it is the caller's
+    responsibility to do so.
+    """
+    result = conn.execute(_remote_check, cmd=command)
+    return result.receive()
+    if exit:
+        conn.exit()
