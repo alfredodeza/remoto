@@ -98,7 +98,7 @@ class ApiModule(ModuleType):
 
     def __makeattr(self, name):
         """lazily compute value for name or raise AttributeError if unknown."""
-        print "makeattr", self.__name__, name
+        #print "makeattr", self.__name__, name
         target = None
         if '__onfirstaccess__' in self.__map__:
             target = self.__map__.pop('__onfirstaccess__')
