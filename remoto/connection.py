@@ -13,6 +13,13 @@ class Connection(object):
         self.logger = logger or FakeRemoteLogger()
         self.sudo = sudo
 
+    def __enter__(self):
+        return self
+
+    def __exit__(self, exc_type, exc_val, exc_tb):
+        self.exit()
+        return False
+
     def execute(self, function, **kw):
         return self.gateway.remote_exec(function, **kw)
 
