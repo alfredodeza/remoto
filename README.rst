@@ -42,3 +42,37 @@ For other types of usage (like checking exit status codes, or raising upon
 them) ``remoto`` does provide them too.
 
 
+Remote Commands
+===============
+
+``process.run``
+---------------
+Calling remote commands can be done in a few different ways. The most simple
+one is with ``process.run``::
+
+    >>> from remoto.process import run
+    >>> from remoto import Connection
+    >>> logger = my_logging_setup('hostname')
+    >>> conn = Connection('hostname')
+    >>> run(conn, ['whoami'])
+    2013-09-07 15:32:06,664 [hostname][DEBUG] root
+
+Note however, that you are not capturing results or information from the remote
+end. The intention here is only to be able to run a command and log its output.
+It is a *fire and forget* call.
+
+
+``process.check``
+-----------------
+This callable, allows the caller to deal with the ``stderr``, ``stdout`` and
+exit code. It returns it in a 3 item tuple::
+
+    >>> from remoto.process import check
+    >>> check(conn, ['ls', '/nonexistent/path'])
+    ([], ['ls: cannot access /nonexistent/path: No such file or directory'], 2)
+
+Note that the ``stdout`` and ``stderr`` items are returned as lists with the ``\n``
+characters removed.
+
+This is useful if you need to process the information back locally, as opposed
+to just firing and forgetting (while logging, like ``process.run``).
