@@ -5,7 +5,7 @@ def reporting(conn, result):
     while True:
         try:
             received = result.receive()
-            level_received, message = received.items()[0]
+            level_received, message = list(received.items())[0]
             log_map[level_received](message.strip('\n'))
         except EOFError:
             break
