@@ -1,3 +1,4 @@
+from pytest import raises
 from remoto import log
 from remoto.exc import TimeoutError
 from mock import Mock
@@ -43,3 +44,9 @@ class TestReporting(object):
         message = conn.logger.warning.call_args[0][0]
         assert 'No data was received after ' in message
 
+    def test_raises_other_errors(self):
+        conn = Mock()
+        result = Mock()
+        result.receive.side_effect = OSError
+        with raises(OSError):
+            log.reporting(conn, result)
