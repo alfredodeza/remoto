@@ -27,6 +27,10 @@ class Connection(object):
         self.gateway.exit()
 
 
+#
+# FIXME this is getting ridiculous
+#
+
 class FakeRemoteLogger:
 
     def error(self, *a, **kw):
@@ -36,4 +40,7 @@ class FakeRemoteLogger:
         pass
 
     def info(self, *a, **kw):
+        pass
+
+    def warning(self, *a, **kw):
         pass
