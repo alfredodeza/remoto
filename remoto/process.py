@@ -28,15 +28,22 @@ def _remote_run(channel, cmd):
                 sys.stdout.flush()
 
 
-def run(conn, command, exit=False):
+def run(conn, command, exit=False, timeout=None):
     """
     A real-time-logging implementation of a remote subprocess.Popen call where
     a command is just executed on the remote end and no other handling is done.
+
+    :param conn: A connection oject
+    :param command: The command to pass in to the remote subprocess.Popen
+    :param exit: If this call should close the connection at the end
+    :param timeout: How many seconds to wait after no remote data is received
+                    (defaults to wait for ever)
     """
+    timeout = timeout or -1
     command = admin_command(conn.sudo, command)
     conn.logger.info('Running command: %s' % ' '.join(command))
     result = conn.execute(_remote_run, cmd=command)
-    reporting(conn, result)
+    reporting(conn, result, timeout)
     if exit:
         conn.exit()
 
