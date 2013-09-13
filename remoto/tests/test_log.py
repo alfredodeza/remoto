@@ -1,4 +1,5 @@
 from remoto import log
+from remoto.exc import TimeoutError
 from mock import Mock
 
 
@@ -33,4 +34,12 @@ class TestReporting(object):
         log.reporting(conn, result)
         message = conn.logger.error.call_args[0][0]
         assert message == 'an error message'
+
+    def test_timeout_error(self):
+        conn = Mock()
+        result = Mock()
+        result.receive.side_effect = TimeoutError
+        log.reporting(conn, result)
+        message = conn.logger.warning.call_args[0][0]
+        assert 'No data was received after ' in message
 
