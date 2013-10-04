@@ -54,4 +54,4 @@ class TestModuleExecuteGetAttr(object):
     def test_raise_attribute_error(self):
         with raises(AttributeError) as err:
             self.remote_module.foo()
-        assert err.value[0] == 'module None does not have attribute foo'
+        assert err.value.args[0] == 'module None does not have attribute foo'
