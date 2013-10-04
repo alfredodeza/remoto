@@ -1,3 +1,9 @@
+0.0.5
+-----
+* Allow more than one thread to be started in the connection
+* log at debug level the name of the function to be remotely
+  executed
+
 0.0.4
 -----
 * Create a way to execute functions remotely
