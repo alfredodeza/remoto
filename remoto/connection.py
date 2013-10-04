@@ -8,12 +8,13 @@ from .lib import execnet
 
 class Connection(object):
 
-    def __init__(self, hostname, logger=None, sudo=False):
+    def __init__(self, hostname, logger=None, sudo=False, threads=1):
         self.hostname = hostname
         self.gateway = self._make_gateway(hostname)
         self.logger = logger or FakeRemoteLogger()
         self.sudo = sudo
         self.channel = None
+        self.gateway.remote_init_threads(threads)
 
     def _make_gateway(self, hostname):
         if needs_ssh(hostname):
@@ -34,25 +35,35 @@ class Connection(object):
         self.gateway.exit()
 
     def import_module(self, module):
-        return ModuleExecute(self.gateway, module)
+        return ModuleExecute(self.gateway, module, self.logger)
 
 
 class ModuleExecute(object):
 
-    def __init__(self, gateway, module):
+    def __init__(self, gateway, module, logger=None):
         self.channel = gateway.remote_exec(module)
         self.module = module
+        self.logger = logger
 
     def __getattr__(self, name):
         if not hasattr(self.module, name):
             msg = "module %s does not have attribute %s" % (str(self.module), name)
             raise AttributeError(msg)
+        docstring = self._get_func_doc(getattr(self.module, name))
 
         def wrapper(*args):
             arguments = self._convert_args(args)
+            if docstring:
+                self.logger.debug(docstring)
             self.channel.send("%s(%s)" % (name, arguments))
             return self.channel.receive()
         return wrapper
+
+    def _get_func_doc(self, func):
+        try:
+            return getattr(func, 'func_doc').strip()
+        except AttributeError:
+            return ''
 
     def _convert_args(self, args):
         if args:
