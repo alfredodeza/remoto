@@ -76,3 +76,44 @@ characters removed.
 
 This is useful if you need to process the information back locally, as opposed
 to just firing and forgetting (while logging, like ``process.run``).
+
+
+Remote Functions
+================
+
+To execute remote functions (ideally) you would need to define them in a module
+and add the following to the end of that module::
+
+    if __name__ == '__channelexec__':
+        for item in channel:
+            channel.send(eval(item))
+
+
+If you had a function in a module named ``foo`` that looks like this::
+
+    import os
+
+    def listdir(path):
+        return os.listdir(path)
+
+To be able to execute that ``listdir`` function remotely you would need to pass
+the module to the connection object and then call that function::
+
+    >>> import foo
+    >>> conn = Connection('hostname')
+    >>> remote_foo = conn.import_module(foo)
+    >>> remote_foo.listdir('.')
+    ['.bash_logout',
+     '.profile',
+     '.veewee_version',
+     '.lesshst',
+     'python',
+     '.vbox_version',
+     'ceph',
+     '.cache',
+     '.ssh']
+
+Note that functions to be executed remotely **cannot** accept objects as
+arguments, just normal Python data structures, like tuples, lists and
+dictionaries. Also safe to use are ints and strings.
+
