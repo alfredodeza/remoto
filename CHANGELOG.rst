@@ -1,3 +1,6 @@
+0.0.4
+-----
+* Create a way to execute functions remotely
 
 0.0.3
 -----
