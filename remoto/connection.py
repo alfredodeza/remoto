@@ -13,6 +13,7 @@ class Connection(object):
         self.gateway = self._make_gateway(hostname)
         self.logger = logger or FakeRemoteLogger()
         self.sudo = sudo
+        self.channel = None
 
     def _make_gateway(self, hostname):
         if needs_ssh(hostname):
@@ -31,6 +32,37 @@ class Connection(object):
 
     def exit(self):
         self.gateway.exit()
+
+    def import_module(self, module):
+        return ModuleExecute(self.gateway, module)
+
+
+class ModuleExecute(object):
+
+    def __init__(self, gateway, module):
+        self.channel = gateway.remote_exec(module)
+        self.module = module
+
+    def __getattr__(self, name):
+        if not hasattr(self.module, name):
+            msg = "module %s does not have attribute %s" % (str(self.module), name)
+            raise AttributeError(msg)
+
+        def wrapper(*args):
+            arguments = self._convert_args(args)
+            self.channel.send("%s(%s)" % (name, arguments))
+            return self.channel.receive()
+        return wrapper
+
+    def _convert_args(self, args):
+        if args:
+            if len(args) > 1:
+                arguments = str(args).rstrip(')').lstrip('(')
+            else:
+                arguments = str(args).rstrip(',)').lstrip('(')
+        else:
+            arguments = ''
+        return arguments
 
 
 #
