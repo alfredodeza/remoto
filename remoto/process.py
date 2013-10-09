@@ -40,8 +40,7 @@ def run(conn, command, exit=False, timeout=None):
                     (defaults to wait for ever)
     """
     timeout = timeout or -1
-    command = admin_command(conn.sudo, command)
-    conn.logger.info('Running command: %s' % ' '.join(command))
+    conn.logger.info('Running command: %s' % ' '.join(admin_command(conn.sudo, command)))
     result = conn.execute(_remote_run, cmd=command)
     reporting(conn, result, timeout)
     if exit:
@@ -67,8 +66,7 @@ def check(conn, command, exit=False):
     This helper function *does not* provide any logging as it is the caller's
     responsibility to do so.
     """
-    command = admin_command(conn.sudo, command)
-    conn.logger.info('Running command: %s' % ' '.join(command))
+    conn.logger.info('Running command: %s' % ' '.join(admin_command(conn.sudo, command)))
     result = conn.execute(_remote_check, cmd=command)
     return result.receive()
     if exit:
