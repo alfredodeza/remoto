@@ -8,18 +8,27 @@ from .lib import execnet
 
 class Connection(object):
 
-    def __init__(self, hostname, logger=None, sudo=False, threads=1):
+    def __init__(self, hostname, logger=None, sudo=False, threads=1, eager=True):
         self.hostname = hostname
-        self.gateway = self._make_gateway(hostname)
-        self.logger = logger or FakeRemoteLogger()
         self.sudo = sudo
+        self.logger = logger or FakeRemoteLogger()
+        self.remote_module = None
         self.channel = None
-        self.gateway.remote_init_threads(threads)
+        if eager:
+            self.gateway = self._make_gateway(hostname)
+            self.gateway.remote_init_threads(threads)
 
     def _make_gateway(self, hostname):
-        if needs_ssh(hostname):
-            return execnet.makegateway('ssh=%s' % hostname)
-        return execnet.makegateway()
+        return execnet.makegateway(
+            self._make_connection_string(hostname)
+        )
+
+    def _make_connection_string(self, hostname, _needs_ssh=None):
+        _needs_ssh = _needs_ssh or needs_ssh(hostname)
+        interpreter = 'sudo python' if self.sudo else 'python'
+        if _needs_ssh(hostname):
+            return 'ssh=%s//python=%s' % (hostname, interpreter)
+        return 'python=%s' % interpreter
 
     def __enter__(self):
         return self
@@ -35,7 +44,7 @@ class Connection(object):
         self.gateway.exit()
 
     def import_module(self, module):
-        return ModuleExecute(self.gateway, module, self.logger)
+        self.remote_module = ModuleExecute(self.gateway, module, self.logger)
 
 
 class ModuleExecute(object):
