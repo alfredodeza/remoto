@@ -24,7 +24,7 @@ class Connection(object):
         )
 
     def _make_connection_string(self, hostname, _needs_ssh=None):
-        _needs_ssh = _needs_ssh or needs_ssh(hostname)
+        _needs_ssh = _needs_ssh or needs_ssh
         interpreter = 'sudo python' if self.sudo else 'python'
         if _needs_ssh(hostname):
             return 'ssh=%s//python=%s' % (hostname, interpreter)
