@@ -10,5 +10,7 @@ def admin_command(sudo, command):
     :param command: A list of the actual command to execute with Popen.
     """
     if sudo:
-        command.insert(0, 'sudo')
+        if not isinstance(command, list):
+            command = [command]
+        return ['sudo'] + [cmd for cmd in command]
     return command
