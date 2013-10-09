@@ -55,3 +55,27 @@ class TestModuleExecuteGetAttr(object):
         with raises(AttributeError) as err:
             self.remote_module.foo()
         assert err.value.args[0] == 'module None does not have attribute foo'
+
+
+class TestMakeConnectionString(object):
+
+    def test_makes_sudo_python_no_ssh(self):
+        conn = connection.Connection('localhost', sudo=True, eager=False)
+        conn_string = conn._make_connection_string('localhost', _needs_ssh=lambda x: False)
+        assert conn_string == 'python=sudo python'
+
+    def test_makes_sudo_python_with_ssh(self):
+        conn = connection.Connection('localhost', sudo=True, eager=False)
+        conn_string = conn._make_connection_string('localhost', _needs_ssh=lambda x: True)
+        assert conn_string == 'ssh=localhost//python=sudo python'
+
+    def test_makes_python_no_ssh(self):
+        conn = connection.Connection('localhost', sudo=False, eager=False)
+        conn_string = conn._make_connection_string('localhost', _needs_ssh=lambda x: False)
+        assert conn_string == 'python=python'
+
+    def test_makes_python_with_ssh(self):
+        conn = connection.Connection('localhost', sudo=False, eager=False)
+        conn_string = conn._make_connection_string('localhost', _needs_ssh=lambda x: True)
+        assert conn_string == 'ssh=localhost//python=python'
+
