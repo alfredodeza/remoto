@@ -14,6 +14,7 @@ class Connection(object):
         self.logger = logger or FakeRemoteLogger()
         self.remote_module = None
         self.channel = None
+        self.global_timeout = -1  # wait for ever
         if eager:
             self.gateway = self._make_gateway(hostname)
             self.gateway.remote_init_threads(threads)
