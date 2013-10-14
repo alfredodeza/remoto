@@ -1,3 +1,4 @@
+import traceback
 from .log import reporting
 from .util import admin_command
 
@@ -16,24 +17,19 @@ def _remote_run(channel, cmd, **kw):
 
     if process.stderr:
         while True:
-            if process.poll() is not None:
-                break
             err = process.stderr.readline()
-            if err == '':
+            if err == '' and process.poll() != None:
                 break
-            else:
-                channel.send({'error': err})
+            if err != '':
+                channel.send({'error':err})
                 sys.stderr.flush()
-
     if process.stdout:
         while True:
-            if process.poll() is not None:
-                break
             out = process.stdout.readline()
-            if out == '':
+            if out == '' and process.poll() != None:
                 break
-            else:
-                channel.send({'debug': out})
+            if out != '':
+                channel.send({'debug':out})
                 sys.stdout.flush()
 
 
@@ -48,6 +44,7 @@ def run(conn, command, exit=False, timeout=None, **kw):
     :param timeout: How many seconds to wait after no remote data is received
                     (defaults to wait for ever)
     """
+    stop_on_error = kw.pop('stop_on_error', True)
     kw.setdefault(
         'env',
         {
@@ -58,7 +55,16 @@ def run(conn, command, exit=False, timeout=None, **kw):
     timeout = timeout or conn.global_timeout
     conn.logger.info('Running command: %s' % ' '.join(admin_command(conn.sudo, command)))
     result = conn.execute(_remote_run, cmd=command, **kw)
-    reporting(conn, result, timeout)
+    try:
+        reporting(conn, result, timeout)
+    except Exception as err:
+        remote_trace = traceback.format_exc()
+        for tb_line in remote_trace.split('\n'):
+            conn.logger.error(tb_line)
+        if stop_on_error:
+            raise RuntimeError(
+                'Failed to execute command: %s' % ' '.join(command)
+            )
     if exit:
         conn.exit()
 
@@ -82,6 +88,7 @@ def check(conn, command, exit=False, timeout=None, **kw):
     This helper function *does not* provide any logging as it is the caller's
     responsibility to do so.
     """
+    stop_on_error = kw.pop('stop_on_error', True)
     timeout = timeout or conn.global_timeout
     kw.setdefault(
         'env',
@@ -101,8 +108,14 @@ def check(conn, command, exit=False, timeout=None, **kw):
         if err.__class__.__name__ == 'TimeoutError':
             msg = 'No data was received after %s seconds, disconnecting...' % timeout
             conn.logger.warning(msg)
+            return
         else:
-            raise
-
+            remote_trace = traceback.format_exc()
+            for tb_line in remote_trace.split('\n'):
+                conn.logger.error(tb_line)
+            if stop_on_error:
+                raise RuntimeError(
+                    'Failed to execute command: %s' % ' '.join(command)
+                )
     if exit:
         conn.exit()
