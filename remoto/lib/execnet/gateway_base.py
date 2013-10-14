@@ -322,15 +322,16 @@ class Channel(object):
             # the remote channel is already in "deleted" state, nothing to do
             pass
         else:
-            # state transition "opened" --> "deleted"
-            if self._items is None:    # has_callback
-                msgcode = Message.CHANNEL_LAST_MESSAGE
-            else:
-                msgcode = Message.CHANNEL_CLOSE
-            try:
-                self.gateway._send(msgcode, self.id)
-            except (IOError, ValueError): # ignore problems with sending
-                pass
+            if Message is not None:
+                # state transition "opened" --> "deleted"
+                if self._items is None:    # has_callback
+                    msgcode = Message.CHANNEL_LAST_MESSAGE
+                else:
+                    msgcode = Message.CHANNEL_CLOSE
+                try:
+                    self.gateway._send(msgcode, self.id)
+                except (IOError, ValueError): # ignore problems with sending
+                    pass
 
     def _getremoteerror(self):
         try:
