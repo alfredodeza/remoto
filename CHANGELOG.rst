@@ -1,3 +1,14 @@
+0.0.7
+-----
+* Patches execnet to allow local popen with sudo python
+
+0.0.6
+-----
+* Add a global timeout option
+* All processes use PATH variables passed to Popen
+* Do not mangle commands if they need sudo
+* Allow sudo python
+
 0.0.5
 -----
 * Allow more than one thread to be started in the connection
