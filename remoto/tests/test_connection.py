@@ -62,7 +62,7 @@ class TestMakeConnectionString(object):
     def test_makes_sudo_python_no_ssh(self):
         conn = connection.Connection('localhost', sudo=True, eager=False)
         conn_string = conn._make_connection_string('localhost', _needs_ssh=lambda x: False)
-        assert conn_string == 'python=sudo python'
+        assert conn_string == 'popen//python=sudo python'
 
     def test_makes_sudo_python_with_ssh(self):
         conn = connection.Connection('localhost', sudo=True, eager=False)
@@ -72,7 +72,7 @@ class TestMakeConnectionString(object):
     def test_makes_python_no_ssh(self):
         conn = connection.Connection('localhost', sudo=False, eager=False)
         conn_string = conn._make_connection_string('localhost', _needs_ssh=lambda x: False)
-        assert conn_string == 'python=python'
+        assert conn_string == 'popen//python=python'
 
     def test_makes_python_with_ssh(self):
         conn = connection.Connection('localhost', sudo=False, eager=False)
