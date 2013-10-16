@@ -29,7 +29,7 @@ class Connection(object):
         interpreter = 'sudo python' if self.sudo else 'python'
         if _needs_ssh(hostname):
             return 'ssh=%s//python=%s' % (hostname, interpreter)
-        return 'python=%s' % interpreter
+        return 'popen//python=%s' % interpreter
 
     def __enter__(self):
         return self
