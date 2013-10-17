@@ -66,7 +66,18 @@ class ModuleExecute(object):
             if docstring:
                 self.logger.debug(docstring)
             self.channel.send("%s(%s)" % (name, arguments))
-            return self.channel.receive()
+            try:
+                return self.channel.receive()
+            except Exception as error:
+                # Error will come as a string of a traceback, remove everything
+                # up to the actual exception since we do get garbage otherwise
+                # that points to non-existent lines in the compiled code
+                for tb_line in reversed(str(error).split('\n')):
+                    if tb_line:
+                        exc_line = tb_line
+                        break
+                raise RuntimeError(exc_line)
+
         return wrapper
 
     def _get_func_doc(self, func):
