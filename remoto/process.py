@@ -18,7 +18,7 @@ def _remote_run(channel, cmd, **kw):
     if process.stderr:
         while True:
             err = process.stderr.readline()
-            if err == '' and process.poll() != None:
+            if err == '' and process.poll() is not None:
                 break
             if err != '':
                 channel.send({'error':err})
@@ -26,11 +26,15 @@ def _remote_run(channel, cmd, **kw):
     if process.stdout:
         while True:
             out = process.stdout.readline()
-            if out == '' and process.poll() != None:
+            if out == '' and process.poll() is not None:
                 break
             if out != '':
                 channel.send({'debug':out})
                 sys.stdout.flush()
+
+    returncode = process.wait()
+    if returncode != 0:
+        raise RuntimeError("command returned non-zero exit status: %s" % returncode)
 
 
 def run(conn, command, exit=False, timeout=None, **kw):
