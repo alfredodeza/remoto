@@ -1,3 +1,7 @@
+0.0.10
+------
+* Allow configuration to raise on non-zero exit status
+
 0.0.9
 -----
 * If the exit status is non-zero on the remote end, raise an exception
