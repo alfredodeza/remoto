@@ -2,7 +2,12 @@
 
 def reporting(conn, result, timeout=None):
     timeout = timeout or conn.global_timeout # -1 a.k.a. wait for ever
-    log_map = {'debug': conn.logger.debug, 'error': conn.logger.error}
+    log_map = {
+        'debug': conn.logger.debug,
+        'error': conn.logger.error,
+        'warning': conn.logger.warning
+    }
+
     while True:
         try:
             received = result.receive(timeout)
