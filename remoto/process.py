@@ -6,6 +6,8 @@ from .util import admin_command
 def _remote_run(channel, cmd, **kw):
     import subprocess
     import sys
+    stop_on_nonzero = kw.pop('stop_on_nonzero', True)
+
 
     process = subprocess.Popen(
         cmd,
@@ -34,7 +36,10 @@ def _remote_run(channel, cmd, **kw):
 
     returncode = process.wait()
     if returncode != 0:
-        raise RuntimeError("command returned non-zero exit status: %s" % returncode)
+        if stop_on_nonzero:
+            raise RuntimeError("command returned non-zero exit status: %s" % returncode)
+        else:
+            channel.send({'warning': "command returned non-zero exit status: %s" % returncode})
 
 
 def run(conn, command, exit=False, timeout=None, **kw):
