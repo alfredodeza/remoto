@@ -1,3 +1,12 @@
+0.0.9
+-----
+* If the exit status is non-zero on the remote end, raise an exception
+
+0.0.8
+-----
+* Raise RuntimeError on remote exceptions so others can actually
+  catch that.
+
 0.0.7
 -----
 * Patches execnet to allow local popen with sudo python
