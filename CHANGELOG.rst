@@ -1,3 +1,7 @@
+0.0.11
+------
+* Catch more TypeError problems when closing the connections.
+
 0.0.10
 ------
 * Allow configuration to raise on non-zero exit status
