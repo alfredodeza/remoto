@@ -3,7 +3,7 @@ execnet: pure python lib for connecting to local and remote Python Interpreters.
 
 (c) 2012, Holger Krekel and others
 """
-__version__ = '1.1-ad2'
+__version__ = '1.1-ad3'
 
 from . import apipkg
 
@@ -26,6 +26,10 @@ apipkg.initpkg(__name__, {
 })
 
 # CHANGELOG
+#
+# 1.1-ad3: Catch more `TypeError` if the connection is closing but the channel attempts
+# to write. We now check is `struct.pack` is not None to proceed.
+# Issue: https://bitbucket.org/hpk42/execnet/issue/22/structpack-can-be-none-sometimes-spits
 #
 # 1.1-ad2: Allow for `sudo python` on local popen gateways
 # Issue: https://bitbucket.org/hpk42/execnet/issue/21/support-sudo-on-local-popen
