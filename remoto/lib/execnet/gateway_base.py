@@ -1,30 +1,28 @@
 """
 base execnet gateway code send to the other side for bootstrapping.
 
-NOTE: aims to be compatible to Python 2.3-3.1, Jython and IronPython
+NOTE: aims to be compatible to Python 2.5-3.X, Jython and IronPython
 
-(C) 2004-2009 Holger Krekel, Armin Rigo, Benjamin Peterson, and others
+(C) 2004-2013 Holger Krekel, Armin Rigo, Benjamin Peterson, and others
 """
 import sys, os, weakref
 import threading, traceback, struct
-try:
-    import queue
-except ImportError:
-    import Queue as queue
 
-try:
-    from io import BytesIO
-except:
-    from StringIO import StringIO as BytesIO
+# NOTE that we want to avoid try/except style importing
+# to avoid setting sys.exc_info() during import
 
 ISPY3 = sys.version_info >= (3, 0)
 if ISPY3:
+    import queue
+    from io import BytesIO
     exec("def do_exec(co, loc): exec(co, loc)\n"
          "def reraise(cls, val, tb): raise val\n")
     unicode = str
     _long_type = int
     from _thread import interrupt_main
 else:
+    import Queue as queue
+    from StringIO import StringIO as BytesIO
     exec("def do_exec(co, loc): exec co in loc\n"
          "def reraise(cls, val, tb): raise cls, val, tb\n")
     bytes = str
@@ -126,9 +124,8 @@ class Message:
         return Message(msgtype, channel, io.read(payload))
 
     def to_io(self, io):
-        if struct.pack is not None:
-            header = struct.pack('!bii', self.msgcode, self.channelid, len(self.data))
-            io.write(header+self.data)
+        header = struct.pack('!bii', self.msgcode, self.channelid, len(self.data))
+        io.write(header+self.data)
 
     def received(self, gateway):
         self._types[self.msgcode](self, gateway)
@@ -323,16 +320,15 @@ class Channel(object):
             # the remote channel is already in "deleted" state, nothing to do
             pass
         else:
-            if Message is not None:
-                # state transition "opened" --> "deleted"
-                if self._items is None:    # has_callback
-                    msgcode = Message.CHANNEL_LAST_MESSAGE
-                else:
-                    msgcode = Message.CHANNEL_CLOSE
-                try:
-                    self.gateway._send(msgcode, self.id)
-                except (IOError, ValueError): # ignore problems with sending
-                    pass
+            # state transition "opened" --> "deleted"
+            if self._items is None:    # has_callback
+                msgcode = Message.CHANNEL_LAST_MESSAGE
+            else:
+                msgcode = Message.CHANNEL_CLOSE
+            try:
+                self.gateway._send(msgcode, self.id)
+            except (IOError, ValueError): # ignore problems with sending
+                pass
 
     def _getremoteerror(self):
         try:
@@ -424,12 +420,11 @@ class Channel(object):
             raise IOError("cannot send to %r" %(self,))
         self.gateway._send(Message.CHANNEL_DATA, self.id, dumps_internal(item))
 
-    def receive(self, timeout=-1):
+    def receive(self, timeout=None):
         """receive a data item that was sent from the other side.
-        timeout: -1 [default] blocked waiting, but wake up periodically
-        to let CTRL-C through.  A positive number indicates the
-        number of seconds after which a channel.TimeoutError exception
-        will be raised if no item was received.
+        timeout: None [default] blocked waiting.  A positive number
+        indicates the number of seconds after which a channel.TimeoutError
+        exception will be raised if no item was received.
         Note that exceptions from the remotely executing code will be
         reraised as channel.RemoteError exceptions containing
         a textual representation of the remote traceback.
@@ -437,19 +432,10 @@ class Channel(object):
         itemqueue = self._items
         if itemqueue is None:
             raise IOError("cannot receive(), channel has receiver callback")
-        if timeout < 0:
-            internal_timeout = self._INTERNALWAKEUP
-        else:
-            internal_timeout = timeout
-
-        while 1:
-            try:
-                x = itemqueue.get(timeout=internal_timeout)
-                break
-            except queue.Empty:
-                if timeout < 0:
-                    continue
-                raise self.TimeoutError("no item after %r seconds" %(timeout))
+        try:
+            x = itemqueue.get(timeout=timeout)
+        except queue.Empty:
+            raise self.TimeoutError("no item after %r seconds" %(timeout))
         if x is ENDMARKER:
             itemqueue.put(x)  # for other receivers
             raise self._getremoteerror() or EOFError()
@@ -798,7 +784,7 @@ class SlaveGateway(BaseGateway):
                             (channel.id, repr(source)[:50]))
             channel._executing = True
             try:
-                co = compile(source+'\n', '', 'exec')
+                co = compile(source+'\n', '<remote exec>', 'exec')
                 do_exec(co, loc)
                 if call_name:
                     self._trace('calling %s(**%60r)' % (call_name, kwargs))
@@ -1020,6 +1006,10 @@ def dumps(obj):
     """
     return _Serializer().save(obj, versioned=True)
 
+def dump(byteio, obj):
+    """ write a serialized bytestring of the given obj to the given stream. """
+    _Serializer(write=byteio.write).save(obj, versioned=True)
+
 def loads(bytestring, py2str_as_py3str=False, py3str_as_py2str=False):
     """ return the object as deserialized from the given bytestring.
 
@@ -1034,8 +1024,16 @@ def loads(bytestring, py2str_as_py3str=False, py3str_as_py2str=False):
     version or if the bytestring is corrupted, the
     ``execnet.DataFormatError`` will be raised.
     """
-    strconfig=(py2str_as_py3str, py3str_as_py2str)
     io = BytesIO(bytestring)
+    return load(io, py2str_as_py3str=py2str_as_py3str,
+                    py3str_as_py2str=py3str_as_py2str)
+
+def load(io, py2str_as_py3str=False, py3str_as_py2str=False):
+    """ derserialize an object form the specified stream.
+
+    Behaviour and parameters are otherwise the same as with ``loads``
+    """
+    strconfig=(py2str_as_py3str, py3str_as_py2str)
     return Unserializer(io, strconfig=strconfig).load(versioned=True)
 
 def loads_internal(bytestring, channelfactory=None, strconfig=None):
@@ -1049,11 +1047,11 @@ def dumps_internal(obj):
 class _Serializer(object):
     _dispatch = {}
 
-    def __init__(self):
-        self._streamlist = []
-
-    def _write(self, data):
-        self._streamlist.append(data)
+    def __init__(self, write=None):
+        if write is None:
+            self._streamlist = []
+            write = self._streamlist.append
+        self._write = write
 
     def save(self, obj, versioned=False):
         # calling here is not re-entrant but multiple instances
@@ -1063,8 +1061,11 @@ class _Serializer(object):
             self._write(DUMPFORMAT_VERSION)
         self._save(obj)
         self._write(opcode.STOP)
-        s = type(self._streamlist[0])().join(self._streamlist)
-        return s
+        try:
+            streamlist = self._streamlist
+        except AttributeError:
+            return None
+        return type(streamlist[0])().join(streamlist)
 
     def _save(self, obj):
         tp = type(obj)

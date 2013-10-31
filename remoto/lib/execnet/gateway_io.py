@@ -65,8 +65,7 @@ popen_bootstrapline = "import sys;exec(eval(sys.stdin.readline()))"
 
 def popen_args(spec):
     python = spec.python or sys.executable
-    args = str(python).split(' ')
-    args.append('-u')
+    args = [str(python), '-u']
     if spec is not None and spec.dont_write_bytecode:
         args.append("-B")
     # Slight gymnastics in ordering these arguments because CPython (as of
@@ -74,15 +73,17 @@ def popen_args(spec):
     args.extend(['-c', popen_bootstrapline])
     return args
 
+
 def ssh_args(spec):
-    remotepython = spec.python or 'python'
-    args = ['ssh', '-C' ]
+    remotepython = spec.python or "python"
+    args = ["ssh", "-C" ]
     if spec.ssh_config is not None:
         args.extend(['-F', str(spec.ssh_config)])
-    remotecmd = '%s -c "%s"' %(remotepython, popen_bootstrapline)
-    args.extend([spec.ssh, remotecmd])
-    return args
 
+    args.extend(spec.ssh.split())
+    remotecmd = '%s -c "%s"' % (remotepython, popen_bootstrapline)
+    args.append(remotecmd)
+    return args
 
 
 def create_io(spec):
