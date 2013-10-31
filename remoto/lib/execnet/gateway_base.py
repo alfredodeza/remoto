@@ -124,8 +124,9 @@ class Message:
         return Message(msgtype, channel, io.read(payload))
 
     def to_io(self, io):
-        header = struct.pack('!bii', self.msgcode, self.channelid, len(self.data))
-        io.write(header+self.data)
+        if struct.pack is not None:
+            header = struct.pack('!bii', self.msgcode, self.channelid, len(self.data))
+            io.write(header+self.data)
 
     def received(self, gateway):
         self._types[self.msgcode](self, gateway)
@@ -320,15 +321,16 @@ class Channel(object):
             # the remote channel is already in "deleted" state, nothing to do
             pass
         else:
-            # state transition "opened" --> "deleted"
-            if self._items is None:    # has_callback
-                msgcode = Message.CHANNEL_LAST_MESSAGE
-            else:
-                msgcode = Message.CHANNEL_CLOSE
-            try:
-                self.gateway._send(msgcode, self.id)
-            except (IOError, ValueError): # ignore problems with sending
-                pass
+            if Message is not None:
+                # state transition "opened" --> "deleted"
+                if self._items is None:    # has_callback
+                    msgcode = Message.CHANNEL_LAST_MESSAGE
+                else:
+                    msgcode = Message.CHANNEL_CLOSE
+                try:
+                    self.gateway._send(msgcode, self.id)
+                except (IOError, ValueError): # ignore problems with sending
+                    pass
 
     def _getremoteerror(self):
         try:
