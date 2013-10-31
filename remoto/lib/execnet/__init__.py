@@ -7,7 +7,7 @@ __version__ = '1.1.1-ad4'
 
 from . import apipkg
 
-execnet.apipkg.initpkg(__name__, {
+apipkg.initpkg(__name__, {
     'PopenGateway':     '.deprecated:PopenGateway',
     'SocketGateway':    '.deprecated:SocketGateway',
     'SshGateway':       '.deprecated:SshGateway',
