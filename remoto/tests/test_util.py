@@ -18,11 +18,17 @@ class TestAdminCommand(object):
 
 class TestRemoteError(object):
 
-    def test_exception_name(self):
-        traceback = ('\n').join([
+    def setup(self):
+        self.traceback = ('\n').join([
             'Traceback (most recent call last):',
             '  File "<string>", line 1, in <module>',
             "NameError: name 'foo' is not defined"
         ])
-        error = util.RemoteError(traceback)
-        error.exception_name == 'NameError'
+
+    def test_exception_name(self):
+        error = util.RemoteError(self.traceback)
+        assert error.exception_name == 'NameError'
+
+    def test_exception_line(self):
+        error = util.RemoteError(self.traceback)
+        assert error.exception_line == "NameError: name 'foo' is not defined"
