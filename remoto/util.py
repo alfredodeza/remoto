@@ -20,6 +20,7 @@ class RemoteError(object):
 
     def __init__(self, traceback):
         self.orig_traceback = traceback
+        self.exception_line = ''
         self.exception_name = self.get_exception_name()
 
     def get_exception_name(self):
@@ -27,4 +28,5 @@ class RemoteError(object):
             if tb_line:
                 for word in tb_line.split():
                     if word.endswith(':'):  # exception!
+                        self.exception_line = tb_line
                         return word.strip().strip(':')
