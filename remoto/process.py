@@ -1,6 +1,6 @@
 import traceback
 from .log import reporting
-from .util import admin_command
+from .util import admin_command, RemoteError
 
 
 def _remote_run(channel, cmd, **kw):
@@ -66,10 +66,14 @@ def run(conn, command, exit=False, timeout=None, **kw):
     result = conn.execute(_remote_run, cmd=command, **kw)
     try:
         reporting(conn, result, timeout)
-    except Exception as err:
+    except Exception:
         remote_trace = traceback.format_exc()
-        for tb_line in remote_trace.split('\n'):
-            conn.logger.error(tb_line)
+        remote_error = RemoteError(remote_trace)
+        if remote_error.exception_name == 'RuntimeError':
+            conn.logger.error(remote_error.exception_line)
+        else:
+            for tb_line in remote_trace.split('\n'):
+                conn.logger.error(tb_line)
         if stop_on_error:
             raise RuntimeError(
                 'Failed to execute command: %s' % ' '.join(command)
@@ -120,8 +124,12 @@ def check(conn, command, exit=False, timeout=None, **kw):
             return
         else:
             remote_trace = traceback.format_exc()
-            for tb_line in remote_trace.split('\n'):
-                conn.logger.error(tb_line)
+            remote_error = RemoteError(remote_trace)
+            if remote_error.exception_name == 'RuntimeError':
+                conn.logger.error(remote_error.exception_line)
+            else:
+                for tb_line in remote_trace.split('\n'):
+                    conn.logger.error(tb_line)
             if stop_on_error:
                 raise RuntimeError(
                     'Failed to execute command: %s' % ' '.join(command)
