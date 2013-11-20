@@ -14,3 +14,17 @@ def admin_command(sudo, command):
             command = [command]
         return ['sudo'] + [cmd for cmd in command]
     return command
+
+
+class RemoteError(object):
+
+    def __init__(self, traceback):
+        self.orig_traceback = traceback
+        self.exception_name = self.get_exception_name()
+
+    def get_exception_name(self):
+        for tb_line in reversed(self.orig_traceback.split('\n')):
+            if tb_line:
+                for word in tb_line.split():
+                    if word.endswith(':'):  # exception!
+                        return word.strip().strip(':')
