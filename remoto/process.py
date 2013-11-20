@@ -23,7 +23,7 @@ def _remote_run(channel, cmd, **kw):
             if err == '' and process.poll() is not None:
                 break
             if err != '':
-                channel.send({'error':err})
+                channel.send({'warning':err})
                 sys.stderr.flush()
     if process.stdout:
         while True:
