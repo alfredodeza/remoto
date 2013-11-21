@@ -1,3 +1,10 @@
+0.0.12
+------
+* Map ``stderr`` to ``WARNING`` log level
+* Do not spit out ``remoto``'s own tracebacks when raising remote errors
+  because some exception occurred just do it for non-remoto exceptions
+* Use version 1.1.1 of execnet with patches.
+
 0.0.11
 ------
 * Catch more TypeError problems when closing the connections.
