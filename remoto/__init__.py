@@ -1,5 +1,5 @@
 from .connection import Connection
-from .rsync import rsync
+from .file_sync import rsync
 
 
 __version__ = '0.0.13'
