@@ -1,3 +1,7 @@
+0.0.13
+------
+* Add a ``sync`` function to be able to synchronize directories between hosts.
+
 0.0.12
 ------
 * Map ``stderr`` to ``WARNING`` log level
