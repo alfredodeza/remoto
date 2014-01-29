@@ -3,7 +3,7 @@ execnet: pure python lib for connecting to local and remote Python Interpreters.
 
 (c) 2012, Holger Krekel and others
 """
-__version__ = '1.2.0.dev2'
+__version__ = '1.2.0.dev2-ad1'
 
 from . import apipkg
 
@@ -27,3 +27,7 @@ apipkg.initpkg(__name__, {
     'dump':             '.gateway_base:dump',
     'DataFormatError':  '.gateway_base:DataFormatError',
 })
+
+# CHANGELOG
+#
+# 1.2.0-ad1: Patch `if case` in to_io method to prevent AttributeErrors
