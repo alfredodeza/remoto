@@ -1,17 +1,14 @@
-import socket
-from execnet.gateway import Gateway
 from execnet.gateway_bootstrap import HostNotFound
-import os, sys, inspect
-
+import sys
 
 try: bytes
 except NameError: bytes = str
 
 class SocketIO:
-
-    error = (socket.error, EOFError)
-    def __init__(self, sock):
+    def __init__(self, sock, execmodel):
         self.sock = sock
+        self.execmodel = execmodel
+        socket = execmodel.socket
         try:
             sock.setsockopt(socket.SOL_IP, socket.IP_TOS, 0x10)# IPTOS_LOWDELAY
             sock.setsockopt(socket.SOL_TCP, socket.TCP_NODELAY, 1)
@@ -34,12 +31,12 @@ class SocketIO:
     def close_read(self):
         try:
             self.sock.shutdown(0)
-        except socket.error:
+        except self.execmodel.socket.error:
             pass
     def close_write(self):
         try:
             self.sock.shutdown(1)
-        except socket.error:
+        except self.execmodel.socket.error:
             pass
 
     def wait(self):
@@ -71,7 +68,7 @@ def start_via(gateway, hostport=None):
     return realhost, realport
 
 
-def create_io(spec, group):
+def create_io(spec, group, execmodel):
     assert not spec.python, (
         "socket: specifying python executables not yet supported")
     gateway_id = spec.installvia
@@ -81,11 +78,12 @@ def create_io(spec, group):
         host, port = spec.socket.split(":")
         port = int(port)
 
+    socket = execmodel.socket
     sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-    io = SocketIO(sock)
+    io = SocketIO(sock, execmodel)
     io.remoteaddress = '%s:%d' % (host, port)
     try:
         sock.connect((host, port))
-    except socket.gaierror:
+    except execmodel.socket.gaierror:
         raise HostNotFound(str(sys.exc_info()[1]))
     return io

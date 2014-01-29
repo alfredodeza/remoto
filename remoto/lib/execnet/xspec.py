@@ -1,8 +1,6 @@
 """
-(c) 2008-2009, holger krekel
+(c) 2008-2013, holger krekel
 """
-import execnet
-
 class XSpec:
     """ Execution Specification: key1=value1//key2=value2 ...
         * keys need to be unique within the specification scope
@@ -12,7 +10,8 @@ class XSpec:
         * if no "=value" is given, assume a boolean True value
     """
     # XXX allow customization, for only allow specific key names
-    popen = ssh = socket = python = chdir = nice = dont_write_bytecode = None
+    popen = ssh = socket = python = chdir = nice = \
+            dont_write_bytecode = execmodel = None
 
     def __init__(self, string):
         self._spec = string

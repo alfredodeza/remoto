@@ -405,9 +405,6 @@ class Message:
             return "<Message.%s channelid=%d %s>" %(name,
                         self.channelid, r)
 
-class GatewayReceivedTerminate(Exception):
-    """ Receiverthread got termination message. """
-
 def _setupmessages():
     def status(message, gateway):
         # we use the channelid to send back information
@@ -416,8 +413,7 @@ def _setupmessages():
              'numexecuting': gateway._execpool.active_count(),
              'execmodel': gateway.execmodel.backend,
         }
-        gateway._send(Message.CHANNEL_DATA, message.channelid,
-                      dumps_internal(d))
+        gateway._send(Message.CHANNEL_DATA, message.channelid, dumps_internal(d))
         gateway._send(Message.CHANNEL_CLOSE, message.channelid)
 
     def channel_exec(message, gateway):
@@ -438,7 +434,10 @@ def _setupmessages():
         gateway._channelfactory._local_close(message.channelid, sendonly=True)
 
     def gateway_terminate(message, gateway):
-        raise GatewayReceivedTerminate(gateway)
+        # wake up and terminate any execution waiting to receive something
+        gateway._channelfactory._finished_receiving()
+        # then try harder to terminate execution
+        gateway._terminate_execution()
 
     def reconfigure(message, gateway):
         if message.channelid == 0:
@@ -498,6 +497,7 @@ class Channel(object):
     """Communication channel between two Python Interpreter execution points."""
     RemoteError = RemoteError
     TimeoutError = TimeoutError
+    Message = Message
     _INTERNALWAKEUP = 1000
     _executing = False
 
@@ -526,7 +526,9 @@ class Channel(object):
             be called with the endmarker when the channel closes.
         """
         _callbacks = self.gateway._channelfactory._callbacks
-        with self.gateway._receivelock:
+        _receivelock = self.gateway._receivelock
+        _receivelock.acquire()
+        try:
             if self._items is None:
                 raise IOError("%r has callback already registered" %(self,))
             items = self._items
@@ -550,6 +552,8 @@ class Channel(object):
                         break
                     else:
                         callback(olditem)
+        finally:
+            _receivelock.release()
 
     def __repr__(self):
         flag = self.isclosed() and "closed" or "open"
@@ -570,19 +574,14 @@ class Channel(object):
             pass
         else:
             # state transition "opened" --> "deleted"
-            # check if we are in the middle of interpreter shutdown
-            # in which case the process will go away and we probably
-            # don't need to try to send a closing or last message
-            # (and often it won't work anymore to send things out)
-            if Message is not None:
-                if self._items is None:    # has_callback
-                    msgcode = Message.CHANNEL_LAST_MESSAGE
-                else:
-                    msgcode = Message.CHANNEL_CLOSE
-                try:
-                    self.gateway._send(msgcode, self.id)
-                except (IOError, ValueError): # ignore problems with sending
-                    pass
+            if self._items is None:    # has_callback
+                msgcode = self.Message.CHANNEL_LAST_MESSAGE
+            else:
+                msgcode = self.Message.CHANNEL_CLOSE
+            try:
+                self.gateway._send(msgcode, self.id)
+            except (IOError, ValueError): # ignore problems with sending
+                pass
 
     def _getremoteerror(self):
         try:
@@ -633,10 +632,9 @@ class Channel(object):
             if not self._receiveclosed.isSet():
                 put = self.gateway._send
                 if error is not None:
-                    put(Message.CHANNEL_CLOSE_ERROR, self.id,
-                        dumps_internal(error))
+                    put(self.Message.CHANNEL_CLOSE_ERROR, self.id, dumps_internal(error))
                 else:
-                    put(Message.CHANNEL_CLOSE, self.id)
+                    put(self.Message.CHANNEL_CLOSE, self.id)
                 self._trace("sent channel close message")
             if isinstance(error, RemoteError):
                 self._remoteerrors.append(error)
@@ -674,7 +672,7 @@ class Channel(object):
         """
         if self.isclosed():
             raise IOError("cannot send to %r" %(self,))
-        self.gateway._send(Message.CHANNEL_DATA, self.id, dumps_internal(item))
+        self.gateway._send(self.Message.CHANNEL_DATA, self.id, dumps_internal(item))
 
     def receive(self, timeout=None):
         """receive a data item that was sent from the other side.
@@ -717,7 +715,7 @@ class Channel(object):
         """
         self._strconfig = (py2str_as_py3str, py3str_as_py2str)
         data = dumps_internal(self._strconfig)
-        self.gateway._send(Message.RECONFIGURE, self.id, data=data)
+        self.gateway._send(self.Message.RECONFIGURE, self.id, data=data)
 
 ENDMARKER = object()
 INTERRUPT_TEXT = "keyboard-interrupted"
@@ -734,7 +732,8 @@ class ChannelFactory(object):
 
     def new(self, id=None):
         """ create a new Channel with 'id' (or create new id if None). """
-        with self._writelock:
+        self._writelock.acquire()
+        try:
             if self.finished:
                 raise IOError("connexion already closed: %s" % (self.gateway,))
             if id is None:
@@ -745,6 +744,8 @@ class ChannelFactory(object):
             except KeyError:
                 channel = self._channels[id] = Channel(self.gateway, id)
             return channel
+        finally:
+            self._writelock.release()
 
     def channels(self):
         return self._list(self._channels.values())
@@ -786,10 +787,11 @@ class ChannelFactory(object):
 
     def _local_receive(self, id, data):
         # executes in receiver thread
-        channel = self._channels.get(id)
         try:
-            callback, endmarker, strconfig = self._callbacks[id]
+            callback, endmarker, strconfig= self._callbacks[id]
+            channel = self._channels.get(id)
         except KeyError:
+            channel = self._channels.get(id)
             queue = channel and channel._items
             if queue is None:
                 pass    # drop data
@@ -800,19 +802,22 @@ class ChannelFactory(object):
             try:
                 data = loads_internal(data, channel, strconfig)
                 callback(data)   # even if channel may be already closed
-            except Exception:
+            except KeyboardInterrupt:
+                raise
+            except:
                 excinfo = sys.exc_info()
-                self.gateway._trace("exception during callback: %s" %
-                                    excinfo[1])
+                self.gateway._trace("exception during callback: %s" % excinfo[1])
                 errortext = self.gateway._geterrortext(excinfo)
-                self.gateway._send(Message.CHANNEL_CLOSE_ERROR,
-                                   id, dumps_internal(errortext))
+                self.gateway._send(Message.CHANNEL_CLOSE_ERROR, id, dumps_internal(errortext))
                 self._local_close(id, errortext)
 
     def _finished_receiving(self):
         self.gateway._trace("finished receiving")
-        with self._writelock:
+        self._writelock.acquire()
+        try:
             self.finished = True
+        finally:
+            self._writelock.release()
         for id in self._list(self._channels):
             self._local_close(id, sendonly=True)
         for id in self._list(self._callbacks):
@@ -892,49 +897,52 @@ class BaseGateway(object):
         # globals may be NONE at process-termination
         self.__trace = trace
         self._geterrortext = geterrortext
-        self._receivepool = self.execmodel.WorkerPool(1)
+        self._workerpool = self.execmodel.WorkerPool(1)
 
     def _trace(self, *msg):
         self.__trace(self.id, *msg)
 
     def _initreceive(self):
-        self._receiverthread = self._receivepool.spawn(self._thread_receiver)
+        self._receiverthread = self._workerpool.spawn(self._thread_receiver)
 
     def _thread_receiver(self):
         def log(*msg):
             self._trace("[receiver-thread]", *msg)
-
         log("RECEIVERTHREAD: starting to run")
+        eof = False
         io = self._io
         try:
             try:
                 while 1:
                     msg = Message.from_io(io)
                     log("received", msg)
-                    with self._receivelock:
+                    _receivelock = self._receivelock
+                    _receivelock.acquire()
+                    try:
                         msg.received(self)
                         del msg
-            except (KeyboardInterrupt, GatewayReceivedTerminate):
-                pass
+                    finally:
+                        _receivelock.release()
+            except self._sysex:
+                log("io.close_read()")
+                self._io.close_read()
             except EOFError:
-                log("EOF without prior gateway termination message")
+                log("got EOF")
+                #log("traceback was: ", self._geterrortext(self.exc_info()))
                 self._error = self.exc_info()[1]
-            except Exception:
+                eof = True
+            except:
                 log(self._geterrortext(self.exc_info()))
         finally:
             try:
                 log('entering finalization')
-                # wake up and terminate any execution waiting to receive
+                # wake up any execution waiting to receive something
                 self._channelfactory._finished_receiving()
-                log('terminating execution')
-                self._terminate_execution()
-                log('closing read')
-                self._io.close_read()
-                log('closing write')
-                self._io.close_write()
+                if eof:
+                    self._terminate_execution()
                 log('leaving finalization')
-            except:  # be silent at shutdown
-                pass
+            except:
+                pass # XXX be silent at interp-shutdown
 
     def _terminate_execution(self):
         pass
@@ -947,8 +955,8 @@ class BaseGateway(object):
         except (IOError, ValueError):
             e = sys.exc_info()[1]
             self._trace('failed to send', message, e)
-            # ValueError might be because the IO is already closed
-            raise IOError("cannot send (already closed?)")
+            raise
+
 
     def _local_schedulexec(self, channel, sourcetask):
         channel.close("execution disallowed")
@@ -977,8 +985,8 @@ class SlaveGateway(BaseGateway):
         # called from receiverthread
         self._trace("shutting down execution pool")
         self._execpool.shutdown()
-        if not self._execpool.waitall(5.0):
-            self._trace("execution ongoing after 5 secs, trying interrupt_main")
+        if not self._execpool.waitall(1.0):
+            self._trace("execution ongoing, trying interrupt_main")
             # We try hard to terminate execution based on the assumption
             # that there is only one gateway object running per-process.
             if sys.platform != "win32":
@@ -1007,8 +1015,8 @@ class SlaveGateway(BaseGateway):
                     trace("waiting for execution to finish")
                     self._execpool.wait_for_shutdown()
             finally:
-                trace("execution finished")
-
+                trace("execution finished, closing io write stream")
+                self._io.close_write()
             trace("joining receiver thread")
             self.join()
         except KeyboardInterrupt:

@@ -15,11 +15,16 @@
 
 progname = 'socket_readline_exec_server-1.2'
 
-import sys, socket, os
-try:
-    import fcntl
-except ImportError:
-    fcntl = None
+import sys, os
+
+def get_fcntl():
+    try:
+        import fcntl
+    except ImportError:
+        fcntl = None
+    return fcntl
+
+fcntl = get_fcntl()
 
 debug = 0
 
@@ -47,19 +52,20 @@ def exec_from_one_connection(serversock):
     # rstrip so that we can use \r\n for telnet testing
     source = clientfile.readline().rstrip()
     clientfile.close()
-    g = {'clientsock' : clientsock, 'address' : address}
+    g = {'clientsock' : clientsock, 'address' : address, 'execmodel': execmodel}
     source = eval(source)
     if source:
         co = compile(source+'\n', source, 'exec')
         print_(progname, 'compiled source, executing')
         try:
-            exec_(co, g)
+            exec_(co, g) # noqa
         finally:
             print_(progname, 'finished executing code')
             # background thread might hold a reference to this (!?)
             #clientsock.close()
 
-def bind_and_listen(hostport):
+def bind_and_listen(hostport, execmodel):
+    socket = execmodel.socket
     if isinstance(hostport, str):
         host, port = hostport.split(':')
         hostport = (host, int(port))
@@ -102,11 +108,15 @@ if __name__ == '__main__':
         hostport = sys.argv[1]
     else:
         hostport = ':8888'
-    serversock = bind_and_listen(hostport)
+    from execnet.gateway_base import get_execmodel
+    execmodel = get_execmodel("thread")
+    serversock = bind_and_listen(hostport, execmodel)
     startserver(serversock, loop=False)
+
 elif __name__=='__channelexec__':
-    bindname = channel.receive()
-    sock = bind_and_listen(bindname)
+    execmodel = channel.gateway.execmodel # noqa
+    bindname = channel.receive() # noqa
+    sock = bind_and_listen(bindname, execmodel)
     port = sock.getsockname()
-    channel.send(port)
+    channel.send(port) # noqa
     startserver(sock)

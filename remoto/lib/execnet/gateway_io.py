@@ -5,7 +5,6 @@ creates io instances used for gateway io
 """
 import os
 import sys
-from subprocess import Popen, PIPE
 
 try:
     from execnet.gateway_base import Popen2IO, Message
@@ -13,9 +12,9 @@ except ImportError:
     from __main__ import Popen2IO, Message
 
 class Popen2IOMaster(Popen2IO):
-    def __init__(self, args):
-        self.popen = p = Popen(args, stdin=PIPE, stdout=PIPE)
-        Popen2IO.__init__(self, p.stdin, p.stdout)
+    def __init__(self, args, execmodel):
+        self.popen = p = execmodel.PopenPiped(args)
+        Popen2IO.__init__(self, p.stdin, p.stdout, execmodel=execmodel)
 
     def wait(self):
         try:
@@ -86,32 +85,47 @@ def ssh_args(spec):
     args.append(remotecmd)
     return args
 
-
-def create_io(spec):
+def create_io(spec, execmodel):
     if spec.popen:
         args = popen_args(spec)
-        return Popen2IOMaster(args)
+        return Popen2IOMaster(args, execmodel)
     if spec.ssh:
         args = ssh_args(spec)
-        io = Popen2IOMaster(args)
+        io = Popen2IOMaster(args, execmodel)
         io.remoteaddress = spec.ssh
         return io
+
+#
+# Proxy Gateway handling code
+#
+# master: proxy initiator
+# forwarder: forwards between master and sub
+# sub: sub process that is proxied to the initiator
 
 RIO_KILL = 1
 RIO_WAIT = 2
 RIO_REMOTEADDRESS = 3
 RIO_CLOSE_WRITE = 4
 
-class RemoteIO(object):
-    def __init__(self, master_channel):
-        self.iochan = master_channel.gateway.newchannel()
-        self.controlchan = master_channel.gateway.newchannel()
-        master_channel.send((self.iochan, self.controlchan))
-        self.io = self.iochan.makefile('r')
-
+class ProxyIO(object):
+    """ A Proxy IO object allows to instantiate a Gateway
+    through another "via" gateway.  A master:ProxyIO object
+    provides an IO object effectively connected to the sub
+    via the forwarder.  To achieve this, master:ProxyIO interacts
+    with forwarder:serve_proxy_io() which itself
+    instantiates and interacts with the sub.
+    """
+    def __init__(self, proxy_channel, execmodel):
+        # after exchanging the control channel we use proxy_channel
+        # for messaging IO
+        self.controlchan = proxy_channel.gateway.newchannel()
+        proxy_channel.send(self.controlchan)
+        self.iochan = proxy_channel
+        self.iochan_file = self.iochan.makefile('r')
+        self.execmodel = execmodel
 
     def read(self, nbytes):
-        return self.io.read(nbytes)
+        return self.iochan_file.read(nbytes)
 
     def write(self, data):
         return self.iochan.send(data)
@@ -129,49 +143,68 @@ class RemoteIO(object):
     def wait(self):
         return self._controll(RIO_WAIT)
 
+    @property
+    def remoteaddress(self):
+        return self._controll(RIO_REMOTEADDRESS)
+
     def __repr__(self):
         return '<RemoteIO via %s>' % (self.iochan.gateway.id, )
 
+class PseudoSpec:
+    def __init__(self, vars):
+        self.__dict__.update(vars)
+    def __getattr__(self, name):
+        return None
 
-def serve_remote_io(channel):
-    class PseudoSpec(object):
-        def __getattr__(self, name):
-            return None
-    spec = PseudoSpec()
-    spec.__dict__.update(channel.receive())
-    io = create_io(spec)
-    io_chan, control_chan = channel.receive()
-    io_target = io_chan.makefile()
+def serve_proxy_io(proxy_channelX):
+    execmodel = proxy_channelX.gateway.execmodel
+    _trace = proxy_channelX.gateway._trace
+    tag = "serve_proxy_io:%s " % proxy_channelX.id
+    def log(*msg):
+        _trace(tag + msg[0], *msg[1:])
+    spec = PseudoSpec(proxy_channelX.receive())
+    # create sub IO object which we will proxy back to our proxy initiator
+    sub_io = create_io(spec, execmodel)
+    control_chan = proxy_channelX.receive()
+    log("got control chan", control_chan)
 
-    def iothread():
-        initial = io.read(1)
-        assert initial == '1'.encode('ascii')
-        channel.gateway._trace('initializing transfer io for', spec.id)
-        io_target.write(initial)
-        while True:
-            message = Message.from_io(io)
-            message.to_io(io_target)
-    import threading
-    thread = threading.Thread(name='io-forward-'+spec.id,
-                              target=iothread)
-    thread.setDaemon(True)
-    thread.start()
-
-    def iocallback(data):
-        io.write(data)
-    io_chan.setcallback(iocallback)
-
+    # read data from master, forward it to the sub
+    # XXX writing might block, thus blocking the receiver thread
+    def forward_to_sub(data):
+        log("forward data to sub, size %s" % len(data))
+        sub_io.write(data)
+    proxy_channelX.setcallback(forward_to_sub)
 
     def controll(data):
         if data==RIO_WAIT:
-            control_chan.send(io.wait())
+            control_chan.send(sub_io.wait())
         elif data==RIO_KILL:
-            control_chan.send(io.kill())
+            control_chan.send(sub_io.kill())
         elif data==RIO_REMOTEADDRESS:
-            control_chan.send(io.remoteaddress)
+            control_chan.send(sub_io.remoteaddress)
         elif data==RIO_CLOSE_WRITE:
-            control_chan.send(io.close_write())
+            control_chan.send(sub_io.close_write())
     control_chan.setcallback(controll)
 
+    # write data to the master coming from the sub
+    forward_to_master_file = proxy_channelX.makefile("w")
+
+    # read bootstrap byte from sub, send it on to master
+    log('reading bootstrap byte from sub', spec.id)
+    initial = sub_io.read(1)
+    assert initial == '1'.encode('ascii'), initial
+    log('forwarding bootstrap byte from sub', spec.id)
+    forward_to_master_file.write(initial)
+
+    # enter message forwarding loop
+    while True:
+        try:
+            message = Message.from_io(sub_io)
+        except EOFError:
+            log('EOF from sub, terminating proxying loop', spec.id)
+            break
+        message.to_io(forward_to_master_file)
+    # proxy_channelX will be closed from remote_exec's finalization code
+
 if __name__ == "__channelexec__":
-    serve_remote_io(channel)
+    serve_proxy_io(channel) # noqa

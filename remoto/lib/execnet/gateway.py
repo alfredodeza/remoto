@@ -1,13 +1,12 @@
 """
 gateway code for initiating popen, socket and ssh connections.
-(c) 2004-2009, Holger Krekel and others
+(c) 2004-2013, Holger Krekel and others
 """
 
 import sys, os, inspect, types, linecache
 import textwrap
 import execnet
 from execnet.gateway_base import Message
-from execnet.gateway_io import Popen2IOMaster
 from execnet import gateway_base
 importdir = os.path.dirname(os.path.dirname(execnet.__file__))
 
@@ -31,8 +30,8 @@ class Gateway(gateway_base.BaseGateway):
         except AttributeError:
             r = "uninitialized"
             i = "no"
-        return "<%s id=%r %s, %s active channels>" %(
-                self.__class__.__name__, self.id, r, i)
+        return "<%s id=%r %s, %s model, %s active channels>" %(
+                self.__class__.__name__, self.id, r, self.execmodel.backend, i)
 
     def exit(self):
         """ trigger gateway exit.  Defer waiting for finishing
@@ -44,11 +43,12 @@ class Gateway(gateway_base.BaseGateway):
             self._trace("gateway already unregistered with group")
             return
         self._group._unregister(self)
-        self._trace("--> sending GATEWAY_TERMINATE")
         try:
+            self._trace("--> sending GATEWAY_TERMINATE")
             self._send(Message.GATEWAY_TERMINATE)
+            self._trace("--> io.close_write")
             self._io.close_write()
-        except IOError:
+        except (ValueError, EOFError, IOError):
             v = sys.exc_info()[1]
             self._trace("io-error: could not send termination sequence")
             self._trace(" exception: %r" % v)
@@ -73,7 +73,7 @@ class Gateway(gateway_base.BaseGateway):
 
     def hasreceiver(self):
         """ return True if gateway is able to receive data. """
-        return self._receiverthread.isAlive() # approxmimation
+        return self._receiverthread.running  # approxmimation
 
     def remote_status(self):
         """ return information object about remote execution status. """
@@ -121,18 +121,8 @@ class Gateway(gateway_base.BaseGateway):
         return channel
 
     def remote_init_threads(self, num=None):
-        """ start up to 'num' threads for subsequent
-            remote_exec() invocations to allow concurrent
-            execution.
-        """
-        if hasattr(self, '_remotechannelthread'):
-            raise IOError("remote threads already running")
-        from execnet import threadpool
-        source = inspect.getsource(threadpool)
-        self._remotechannelthread = self.remote_exec(source)
-        self._remotechannelthread.send(num)
-        status = self._remotechannelthread.receive()
-        assert status == "ok", status
+        """ DEPRECATED.  Is currently a NO-OPERATION already."""
+        print ("WARNING: remote_init_threads() is a no-operation in execnet-1.2")
 
 class RInfo:
     def __init__(self, kwargs):
