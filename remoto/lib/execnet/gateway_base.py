@@ -242,14 +242,17 @@ class WorkerPool(object):
         reply = Reply((func, args, kwargs), self.execmodel)
         def run_and_release():
             reply.run()
-            with self._running_lock:
-                self._running.remove(reply)
-                self._sem.release()
-                if not self._running:
-                    try:
-                        self._waitall_event.set()
-                    except AttributeError:
-                        pass
+            try:
+                with self._running_lock:
+                    self._running.remove(reply)
+                    self._sem.release()
+                    if not self._running:
+                        try:
+                            self._waitall_event.set()
+                        except AttributeError:
+                            pass
+            except TypeError:
+                pass
         self._sem.acquire()
         with self._running_lock:
             self._running.add(reply)
