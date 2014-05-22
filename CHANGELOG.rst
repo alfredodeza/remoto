@@ -1,3 +1,16 @@
+0.0.16
+------
+* spit stdout before stderr as errors should be read last
+
+0.0.15
+------
+* eat typeerror when closing the connection (execnet)
+
+0.0.14
+------
+* Use new execnet  1.2.0
+* use new connection defaults for execent
+
 0.0.13
 ------
 * Add a ``sync`` function to be able to synchronize directories between hosts.
