@@ -8,7 +8,6 @@ def _remote_run(channel, cmd, **kw):
     import sys
     stop_on_nonzero = kw.pop('stop_on_nonzero', True)
 
-
     process = subprocess.Popen(
         cmd,
         stdout=subprocess.PIPE,
@@ -17,22 +16,23 @@ def _remote_run(channel, cmd, **kw):
         **kw
     )
 
-    if process.stderr:
-        while True:
-            err = process.stderr.readline()
-            if err == '' and process.poll() is not None:
-                break
-            if err != '':
-                channel.send({'warning':err})
-                sys.stderr.flush()
     if process.stdout:
         while True:
             out = process.stdout.readline()
             if out == '' and process.poll() is not None:
                 break
             if out != '':
-                channel.send({'debug':out})
+                channel.send({'debug': out})
                 sys.stdout.flush()
+
+    if process.stderr:
+        while True:
+            err = process.stderr.readline()
+            if err == '' and process.poll() is not None:
+                break
+            if err != '':
+                channel.send({'warning': err})
+                sys.stderr.flush()
 
     returncode = process.wait()
     if returncode != 0:
