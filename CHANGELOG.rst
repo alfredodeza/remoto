@@ -1,3 +1,7 @@
+0.0.17
+------
+* add some imports to init so that they are easier to use
+
 0.0.16
 ------
 * spit stdout before stderr as errors should be read last
