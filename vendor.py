@@ -1,9 +1,9 @@
 import subprocess
 import os
 from os import path
+import re
 import traceback
 import sys
-import shutil
 
 
 error_msg = """
@@ -15,7 +15,7 @@ This means that it will *not* work as expected. Errors encountered:
 
 
 def run(cmd):
-    print '[vendoring] Running command: %s' % ' '.join(cmd)
+    sys.stdout.write('[vendoring] Running command: %s\n' % ' '.join(cmd))
     try:
         result = subprocess.Popen(
             cmd,
@@ -33,18 +33,19 @@ def run(cmd):
 
 
 def print_error(stdout, stderr):
-    print '*'*80
-    print error_msg
+    sys.stderr.write('*\n'*80)
+    sys.stderr.write(error_msg+'\n')
     for line in stdout:
-        print line
+        sys.stderr.write(line+'\n')
     for line in stderr:
-        print line
-    print '*'*80
+        sys.stderr.write(line+'\n')
+    sys.stderr.write('*'*80+'\n')
 
 
 def vendor_library(name, version, git_repo):
     this_dir = path.dirname(path.abspath(__file__))
     vendor_dest = path.join(this_dir, 'remoto/lib/vendor/%s' % name)
+    vendor_init = path.join(vendor_dest, '__init__.py')
     vendor_src = path.join(this_dir, name)
     vendor_module = path.join(vendor_src, name)
     current_dir = os.getcwd()
@@ -52,9 +53,13 @@ def vendor_library(name, version, git_repo):
     if path.exists(vendor_src):
         run(['rm', '-rf', vendor_src])
 
-    if path.exists(vendor_dest):
-        module = __import__('remoto.lib.vendor.%s' % name, globals(), locals(), ['__version__'])
-        if module.__version__ != version:
+    if path.exists(vendor_init):
+        module_file = open(vendor_init).read()
+        metadata = dict(re.findall(r"__([a-z]+)__\s*=\s*['\"]([^'\"]*)['\"]", module_file))
+        #module = __import__('remoto.lib.vendor.%s' % name, globals(), locals(), ['__version__'])
+        #if module.__version__ != version:
+        if metadata.get('version') != version:
+        #if module.__version__ != version:
             run(['rm', '-rf', vendor_dest])
 
     if not path.exists(vendor_dest):
