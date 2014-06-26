@@ -1,7 +1,11 @@
+import os
 import re
 
+from vendor import vendorize, clean_vendor
+
+
 module_file = open("remoto/__init__.py").read()
-metadata = dict(re.findall("__([a-z]+)__\s*=\s*'([^']+)'", module_file))
+metadata = dict(re.findall(r"__([a-z]+)__\s*=\s*['\"]([^'\"]*)['\"]", module_file))
 long_description = open('README.rst').read()
 
 from setuptools import setup, find_packages
