@@ -6,6 +6,19 @@ long_description = open('README.rst').read()
 
 from setuptools import setup, find_packages
 
+#
+# Add libraries that are not part of install_requires but only if we really
+# want to, specified by the environment flag
+#
+
+if os.environ.get('REMOTO_NO_VENDOR'):
+    clean_vendor('execnet')
+else:
+    vendorize([
+        ('execnet', '1.2.post1', 'https://github.com/alfredodeza/execnet'),
+    ])
+
+
 setup(
     name = 'remoto',
     description = 'Execute remote commands or processes.',
