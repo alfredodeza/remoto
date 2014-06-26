@@ -31,3 +31,7 @@ nosetests.xml
 .mr.developer.cfg
 .project
 .pydevproject
+
+# vendor
+remoto/lib/vendor/execnet
+execnet
