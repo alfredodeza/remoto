@@ -1,6 +1,7 @@
 0.0.17
 ------
 * add some imports to init so that they are easier to use
+* make vendor libraries optional
 
 0.0.16
 ------
