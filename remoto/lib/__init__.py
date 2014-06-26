@@ -18,11 +18,17 @@ The expected way to import execnet would look like this::
     from remoto.lib import execnet
 
 """
+import sys
+import os
+this_dir = os.path.abspath(os.path.dirname(__file__))
+vendor_dir = os.path.join(this_dir, 'vendor')
 
 try:
     # vendored
-    from vendor import execnet
-except ImportError:
+    if vendor_dir not in sys.path:
+        sys.path.insert(0, vendor_dir)
+    import execnet
+except ImportError as err:
     # normally installed
     import execnet  # noqa
 
