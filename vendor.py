@@ -93,3 +93,13 @@ def vendorize(vendor_requirements):
     for library in vendor_requirements:
         name, version, repo = library
         vendor_library(name, version, repo)
+
+
+if __name__ == '__main__':
+    # XXX define this in one place, so that we avoid making updates
+    # in two places
+    vendor_requirements = [
+        ('execnet', '1.2.post1', 'https://github.com/alfredodeza/execnet'),
+    ]
+    vendorize(vendor_requirements)
+
