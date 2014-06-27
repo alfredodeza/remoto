@@ -56,10 +56,7 @@ def vendor_library(name, version, git_repo):
     if path.exists(vendor_init):
         module_file = open(vendor_init).read()
         metadata = dict(re.findall(r"__([a-z]+)__\s*=\s*['\"]([^'\"]*)['\"]", module_file))
-        #module = __import__('remoto.lib.vendor.%s' % name, globals(), locals(), ['__version__'])
-        #if module.__version__ != version:
         if metadata.get('version') != version:
-        #if module.__version__ != version:
             run(['rm', '-rf', vendor_dest])
 
     if not path.exists(vendor_dest):
