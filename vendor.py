@@ -34,11 +34,11 @@ def run(cmd):
 
 def print_error(stdout, stderr):
     sys.stderr.write('*\n'*80)
-    sys.stderr.write(error_msg+'\n')
+    sys.stderr.write(str(error_msg)+'\n')
     for line in stdout:
-        sys.stderr.write(line+'\n')
+        sys.stderr.write(str(line)+'\n')
     for line in stderr:
-        sys.stderr.write(line+'\n')
+        sys.stderr.write(str(line)+'\n')
     sys.stderr.write('*'*80+'\n')
 
 
