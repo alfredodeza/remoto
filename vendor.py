@@ -99,7 +99,7 @@ if __name__ == '__main__':
     # XXX define this in one place, so that we avoid making updates
     # in two places
     vendor_requirements = [
-        ('execnet', '1.2.post1', 'https://github.com/alfredodeza/execnet'),
+        ('execnet', '1.2post2', 'https://github.com/alfredodeza/execnet'),
     ]
     vendorize(vendor_requirements)
 

@@ -19,7 +19,7 @@ if os.environ.get('REMOTO_NO_VENDOR'):
     clean_vendor('execnet')
 else:
     vendorize([
-        ('execnet', '1.2.post2', 'https://github.com/alfredodeza/execnet'),
+        ('execnet', '1.2post2', 'https://github.com/alfredodeza/execnet'),
     ])
 
 

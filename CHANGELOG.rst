@@ -1,3 +1,12 @@
+0.0.19
+------
+* Fix ``vendor.py`` to really include the proper tag for ``execnet``
+
+0.0.18
+------
+* Use execnet 1.2post2 that fixes a problem with ``None`` globals (see issue
+  #1)
+
 0.0.17
 ------
 * add some imports to init so that they are easier to use
