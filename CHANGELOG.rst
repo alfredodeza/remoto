@@ -1,3 +1,7 @@
+0.0.20
+------
+* Fix unneeded ssh connection when using FQDN hosts
+
 0.0.19
 ------
 * Fix ``vendor.py`` to really include the proper tag for ``execnet``
