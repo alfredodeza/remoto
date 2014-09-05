@@ -4,8 +4,9 @@ from remoto import connection
 
 class FakeSocket(object):
 
-    def __init__(self, gethostname):
+    def __init__(self, gethostname, getfqdn=None):
         self.gethostname = lambda: gethostname
+        self.getfqdn = lambda: getfqdn or gethostname
 
 
 class TestNeedsSsh(object):
@@ -21,6 +22,11 @@ class TestNeedsSsh(object):
     def test_hostname_does_not_match(self):
         socket = FakeSocket('foo')
         assert connection.needs_ssh('meh', socket) is True
+
+    def test_fqdn_hostname_matches_short_hostname(self):
+        socket = FakeSocket('foo', getfqdn='foo.example.org')
+        assert connection.needs_ssh('foo.example.org', socket) is False
+
 
 
 class FakeGateway(object):
