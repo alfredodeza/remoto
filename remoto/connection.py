@@ -121,6 +121,9 @@ def needs_ssh(hostname, _socket=None):
     of its FQDN.
     """
     _socket = _socket or socket
+    fqdn = _socket.getfqdn()
+    if hostname == fqdn:
+        return False
     local_hostname = _socket.gethostname()
     local_short_hostname = local_hostname.split('.')[0]
     if local_hostname == hostname or local_short_hostname == hostname:
