@@ -1,3 +1,7 @@
+0.0.21
+------
+* Do not override remote environment variables to set the ``$PATH``
+
 0.0.20
 ------
 * Fix unneeded ssh connection when using FQDN hosts
