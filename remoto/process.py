@@ -42,6 +42,27 @@ def _remote_run(channel, cmd, **kw):
             channel.send({'warning': "command returned non-zero exit status: %s" % returncode})
 
 
+def extend_path(conn, arguments):
+    """
+    get the remote environment's env so we can explicitly add the path without
+    wiping out everything
+    """
+    # retrieve the remote environment variables for the host
+    try:
+        result = conn.gateway.remote_exec("import os; channel.send(os.environ.copy())")
+        env = result.receive()
+    except Exception:
+        conn.logger.exception('failed to retrieve the remote environment variables')
+        env = {}
+
+    # get the $PATH and extend it (do not overwrite)
+    path = env.get('PATH', '')
+    env['PATH'] = path + '/usr/local/bin:/bin:/usr/bin:/usr/local/sbin:/usr/sbin:/sbin'
+    arguments['env'] = env
+
+    return arguments
+
+
 def run(conn, command, exit=False, timeout=None, **kw):
     """
     A real-time-logging implementation of a remote subprocess.Popen call where
@@ -54,13 +75,11 @@ def run(conn, command, exit=False, timeout=None, **kw):
                     (defaults to wait for ever)
     """
     stop_on_error = kw.pop('stop_on_error', True)
-    kw.setdefault(
-        'env',
-        {
-            'PATH':
-            '/usr/local/bin:/bin:/usr/bin:/usr/local/sbin:/usr/sbin:/sbin'
-        }
-    )
+    if not kw.get('env'):
+        # get the remote environment's env so we can explicitly add
+        # the path without wiping out everything
+        kw = extend_path(conn, kw)
+
     timeout = timeout or conn.global_timeout
     conn.logger.info('Running command: %s' % ' '.join(admin_command(conn.sudo, command)))
     result = conn.execute(_remote_run, cmd=command, **kw)
@@ -103,13 +122,11 @@ def check(conn, command, exit=False, timeout=None, **kw):
     """
     stop_on_error = kw.pop('stop_on_error', True)
     timeout = timeout or conn.global_timeout
-    kw.setdefault(
-        'env',
-        {
-            'PATH':
-            '/usr/local/bin:/bin:/usr/bin:/usr/local/sbin:/usr/sbin:/sbin'
-        }
-    )
+    if not kw.get('env'):
+        # get the remote environment's env so we can explicitly add
+        # the path without wiping out everything
+        kw = extend_path(conn, kw)
+
     conn.logger.info('Running command: %s' % ' '.join(admin_command(conn.sudo, command)))
     result = conn.execute(_remote_check, cmd=command, **kw)
     try:
