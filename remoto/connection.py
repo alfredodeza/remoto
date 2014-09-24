@@ -8,14 +8,16 @@ from .lib import execnet
 
 class Connection(object):
 
-    def __init__(self, hostname, logger=None, sudo=False, threads=1, eager=True):
-        self.hostname = hostname
+    def __init__(self, hostname, logger=None, sudo=False, threads=1, eager=True, detect_sudo=False):
         self.sudo = sudo
+        self.hostname = hostname
         self.logger = logger or FakeRemoteLogger()
         self.remote_module = None
         self.channel = None
         self.global_timeout = None  # wait for ever
         if eager:
+            if detect_sudo:
+                self.sudo = self._detect_sudo()
             self.gateway = self._make_gateway(hostname)
 
     def _make_gateway(self, hostname):
@@ -23,9 +25,38 @@ class Connection(object):
             self._make_connection_string(hostname)
         )
 
-    def _make_connection_string(self, hostname, _needs_ssh=None):
+    def _detect_sudo(self, _execnet=None):
+        """
+        ``sudo`` detection has to create a different connection to the remote
+        host so that we can reliably ensure that ``getuser()`` will return the
+        right information.
+
+        After getting the user info it closes the connection and returns
+        a boolean
+        """
+        exc = _execnet or execnet
+        gw = exc.makegateway(
+            self._make_connection_string(self.hostname, use_sudo=False)
+        )
+
+        channel = gw.remote_exec(
+            'import getpass; channel.send(getpass.getuser())'
+        )
+
+        result = channel.receive()
+        gw.exit()
+
+        if result == 'root':
+            return False
+        self.logger.debug('connection detected need for sudo')
+        return True
+
+    def _make_connection_string(self, hostname, _needs_ssh=None, use_sudo=None):
         _needs_ssh = _needs_ssh or needs_ssh
-        interpreter = 'sudo python' if self.sudo else 'python'
+        if use_sudo is not None:
+            interpreter = 'sudo python' if use_sudo else 'python'
+        else:
+            interpreter = 'sudo python' if self.sudo else 'python'
         if _needs_ssh(hostname):
             return 'ssh=%s//python=%s' % (hostname, interpreter)
         return 'popen//python=%s' % interpreter
