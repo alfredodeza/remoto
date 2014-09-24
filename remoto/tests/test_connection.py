@@ -1,3 +1,4 @@
+from mock import Mock
 from py.test import raises
 from remoto import connection
 
@@ -85,3 +86,31 @@ class TestMakeConnectionString(object):
         conn_string = conn._make_connection_string('localhost', _needs_ssh=lambda x: True)
         assert conn_string == 'ssh=localhost//python=python'
 
+    def test_makes_sudo_python_with_forced_sudo(self):
+        conn = connection.Connection('localhost', sudo=True, eager=False)
+        conn_string = conn._make_connection_string('localhost', _needs_ssh=lambda x: False, use_sudo=True)
+        assert conn_string == 'popen//python=sudo python'
+
+    def test_does_not_make_sudo_python_with_forced_sudo(self):
+        conn = connection.Connection('localhost', sudo=True, eager=False)
+        conn_string = conn._make_connection_string('localhost', _needs_ssh=lambda x: False, use_sudo=False)
+        assert conn_string == 'popen//python=python'
+
+
+class TestDetectSudo(object):
+
+    def setup(self):
+        self.execnet = Mock()
+        self.execnet.return_value = self.execnet
+        self.execnet.makegateway.return_value = self.execnet
+        self.execnet.remote_exec.return_value = self.execnet
+
+    def test_does_not_need_sudo(self):
+        self.execnet.receive.return_value = 'root'
+        conn = connection.Connection('localhost', sudo=True, eager=False)
+        assert conn._detect_sudo(_execnet=self.execnet) is False
+
+    def test_does_need_sudo(self):
+        self.execnet.receive.return_value = 'alfredo'
+        conn = connection.Connection('localhost', sudo=True, eager=False)
+        assert conn._detect_sudo(_execnet=self.execnet) is True
