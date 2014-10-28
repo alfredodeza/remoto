@@ -6,6 +6,7 @@ from .util import admin_command, RemoteError
 def _remote_run(channel, cmd, **kw):
     import subprocess
     import sys
+    from select import select
     stop_on_nonzero = kw.pop('stop_on_nonzero', True)
 
     process = subprocess.Popen(
@@ -16,28 +17,34 @@ def _remote_run(channel, cmd, **kw):
         **kw
     )
 
-    if process.stdout:
-        while True:
-            out = process.stdout.readline()
-            if out == '' and process.poll() is not None:
-                break
-            if out != '':
-                channel.send({'debug': out})
-                sys.stdout.flush()
+    while True:
+        reads, _, _ = select(
+            [process.stdout.fileno(), process.stderr.fileno()],
+            [], []
+        )
 
-    if process.stderr:
-        while True:
-            err = process.stderr.readline()
-            if err == '' and process.poll() is not None:
-                break
-            if err != '':
-                channel.send({'warning': err})
-                sys.stderr.flush()
+        for descriptor in reads:
+            if descriptor == process.stdout.fileno():
+                read = process.stdout.readline()
+                if read:
+                    channel.send({'debug': read})
+                    sys.stdout.flush()
+
+            if descriptor == process.stderr.fileno():
+                read = process.stderr.readline()
+                if read:
+                    channel.send({'warning': read})
+                    sys.stderr.flush()
+
+        if process.poll() is not None:
+            break
 
     returncode = process.wait()
     if returncode != 0:
         if stop_on_nonzero:
-            raise RuntimeError("command returned non-zero exit status: %s" % returncode)
+            raise RuntimeError(
+                "command returned non-zero exit status: %s" % returncode
+            )
         else:
             channel.send({'warning': "command returned non-zero exit status: %s" % returncode})
 
