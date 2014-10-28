@@ -1,3 +1,11 @@
+0.0.23
+------
+* Output the exact same order of remote ``stdout`` and ``stderr``
+
+0.0.22
+------
+* Create a better detection mechanism for remote ``sudo`` needs
+
 0.0.21
 ------
 * Do not override remote environment variables to set the ``$PATH``
