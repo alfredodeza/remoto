@@ -1,3 +1,8 @@
+0.0.24
+------
+* Ship the ``LICENSE`` file and ``tests`` directory as part of the
+  distribution.
+
 0.0.23
 ------
 * Output the exact same order of remote ``stdout`` and ``stderr``
