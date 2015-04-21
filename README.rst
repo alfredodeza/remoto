@@ -126,3 +126,13 @@ Note that functions to be executed remotely **cannot** accept objects as
 arguments, just normal Python data structures, like tuples, lists and
 dictionaries. Also safe to use are ints and strings.
 
+
+Automatic detection for remote connections
+------------------------------------------
+There is automatic detection for the need to connect remotely (via SSH) or not
+that it is infered by the hostname of the current host (vs. the host that is
+connecting to).
+
+If the local host has the same as the remote hostname, a local connection (via
+`Popen`) will be opened and that will be used instead of `ssh`, and avoiding
+the issues of being able to ssh into the same host.
