@@ -136,3 +136,13 @@ connecting to).
 If the local host has the same as the remote hostname, a local connection (via
 `Popen`) will be opened and that will be used instead of `ssh`, and avoiding
 the issues of being able to ssh into the same host.
+
+Automatic detection for using `sudo`
+------------------------------------
+This magical detection can be enabled by using the `detect_sudo` flag in the
+`Connection` class. It is disabled by default.
+
+When enabled, it will prefix any command with `sudo`. This is useful for
+libraries that need super user permissions and want to avoid passing `sudo`
+everywhere, which can be non-trivial if dealing with `root` users that are
+connecting via SSH.
