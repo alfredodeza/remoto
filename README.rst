@@ -23,17 +23,25 @@ the very least, has both ``error`` and ``debug``. Those are called for
 
 This is how it would look with a basic logger passed in::
 
+    >>> import logging
+    >>> logging.basiConfig(level=logging.DEBUG)
     >>> logger = logging.getLogger('hostname')
     >>> conn = remoto.Connection('hostname', logger=logger)
     >>> run(conn, ['ls', '-a'])
-    2013-09-07 15:32:06,662 [hostname][DEBUG] .
-    2013-09-07 15:32:06,662 [hostname][DEBUG] ..
-    2013-09-07 15:32:06,662 [hostname][DEBUG] .bash_history
-    2013-09-07 15:32:06,662 [hostname][DEBUG] .bash_logout
-    2013-09-07 15:32:06,662 [hostname][DEBUG] .bashrc
-    2013-09-07 15:32:06,662 [hostname][DEBUG] .cache
-    2013-09-07 15:32:06,664 [hostname][DEBUG] .profile
-    2013-09-07 15:32:06,664 [hostname][DEBUG] .ssh
+    INFO:hostname:Running command: ls -a
+    DEBUG:hostname:.
+    DEBUG:hostname:..
+    DEBUG:hostname:.bash_history
+    DEBUG:hostname:.bash_logout
+    DEBUG:hostname:.bash_profile
+    DEBUG:hostname:.bashrc
+    DEBUG:hostname:.gem
+    DEBUG:hostname:.lesshst
+    DEBUG:hostname:.pki
+    DEBUG:hostname:.puppet
+    DEBUG:hostname:.ssh
+    DEBUG:hostname:.vim
+    DEBUG:hostname:.viminfo
 
 The ``run`` helper will display the ``stderr`` and ``stdout`` as ``ERROR`` and
 ``DEBUG`` respectively.
@@ -52,10 +60,11 @@ one is with ``process.run``::
 
     >>> from remoto.process import run
     >>> from remoto import Connection
-    >>> logger = my_logging_setup('hostname')
-    >>> conn = Connection('hostname')
+    >>> logger = logging.getLogger('myhost')
+    >>> conn = Connection('myhost', logger=logger)
     >>> run(conn, ['whoami'])
-    2013-09-07 15:32:06,664 [hostname][DEBUG] root
+    INFO:myhost:Running command: whoami
+    DEBUG:myhost:root
 
 Note however, that you are not capturing results or information from the remote
 end. The intention here is only to be able to run a command and log its output.
