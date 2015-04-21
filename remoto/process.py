@@ -37,6 +37,30 @@ def _remote_run(channel, cmd, **kw):
                     sys.stderr.flush()
 
         if process.poll() is not None:
+            # ensure we do not have anything pending in stdout or stderr
+            # unfortunately, we cannot abstract this repetitive loop into its
+            # own function because execnet does not allow for non-global (or
+            # even nested functions). This must be repeated here.
+            while True:
+                for descriptor in reads:
+                    if descriptor == process.stdout.fileno():
+                        read = process.stdout.readline()
+                        if read:
+                            channel.send({'debug': read})
+                            sys.stdout.flush()
+
+                    if descriptor == process.stderr.fileno():
+                        read = process.stderr.readline()
+                        if read:
+                            channel.send({'warning': read})
+                            sys.stderr.flush()
+                # At this point we have gone through all the possible
+                # descriptors and `read` was empty, so we now can break out of
+                # this since all stdout/stderr has been properly flushed to
+                # logging
+                if not read:
+                    break
+
             break
 
     returncode = process.wait()
