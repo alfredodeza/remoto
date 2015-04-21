@@ -76,6 +76,7 @@ class Connection(object):
 
     def import_module(self, module):
         self.remote_module = ModuleExecute(self.gateway, module, self.logger)
+        return self.remote_module
 
 
 class ModuleExecute(object):

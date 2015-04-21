@@ -1,6 +1,7 @@
 from mock import Mock
 from py.test import raises
 from remoto import connection
+import fake_module
 
 
 class FakeSocket(object):
@@ -29,11 +30,25 @@ class TestNeedsSsh(object):
         assert connection.needs_ssh('foo.example.org', socket) is False
 
 
-
 class FakeGateway(object):
 
     def remote_exec(self, module):
         pass
+
+
+class TestRemoteModule(object):
+
+    def setup(self):
+        self.conn = connection.Connection('localhost', sudo=True, eager=False)
+        self.conn.gateway = FakeGateway()
+
+    def test_importing_it_sets_it_as_remote_module(self):
+        self.conn.import_module(fake_module)
+        assert fake_module == self.conn.remote_module.module
+
+    def test_importing_it_returns_the_module_too(self):
+        remote_foo = self.conn.import_module(fake_module)
+        assert remote_foo.module == fake_module
 
 
 class TestModuleExecuteArgs(object):
