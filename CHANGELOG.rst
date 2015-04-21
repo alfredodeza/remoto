@@ -1,3 +1,10 @@
+0.0.25
+------
+21-Apr-2015
+* Fix (issue 15) where a child process could finish but output would not be
+  flushed to stdout/stderr.
+
+
 0.0.24
 ------
 * Ship the ``LICENSE`` file and ``tests`` directory as part of the
