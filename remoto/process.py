@@ -44,21 +44,21 @@ def _remote_run(channel, cmd, **kw):
             while True:
                 for descriptor in reads:
                     if descriptor == process.stdout.fileno():
-                        read = process.stdout.readline()
-                        if read:
-                            channel.send({'debug': read})
+                        out_read = process.stdout.readline()
+                        if out_read:
+                            channel.send({'debug': out_read})
                             sys.stdout.flush()
 
                     if descriptor == process.stderr.fileno():
-                        read = process.stderr.readline()
-                        if read:
-                            channel.send({'warning': read})
+                        err_read = process.stderr.readline()
+                        if err_read:
+                            channel.send({'warning': err_read})
                             sys.stderr.flush()
                 # At this point we have gone through all the possible
                 # descriptors and `read` was empty, so we now can break out of
                 # this since all stdout/stderr has been properly flushed to
                 # logging
-                if not read:
+                if not err_read and not out_read:
                     break
 
             break
