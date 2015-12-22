@@ -42,6 +42,7 @@ def _remote_run(channel, cmd, **kw):
             # own function because execnet does not allow for non-global (or
             # even nested functions). This must be repeated here.
             while True:
+                err_read = out_read = None
                 for descriptor in reads:
                     if descriptor == process.stdout.fileno():
                         out_read = process.stdout.readline()
