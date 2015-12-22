@@ -1,3 +1,9 @@
+0.0.27
+------
+22-Dec-2015
+* Fix a problem where stderr/stdout variables would be undefined on certain
+  conditions when running a remote command.
+
 0.0.26
 ------
 15-Dec-2015
