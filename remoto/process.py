@@ -161,8 +161,9 @@ def check(conn, command, exit=False, timeout=None, **kw):
 
     conn.logger.info('Running command: %s' % ' '.join(admin_command(conn.sudo, command)))
     result = conn.execute(_remote_check, cmd=command, **kw)
+    response = None
     try:
-        return result.receive(timeout)
+        response = result.receive(timeout)
     except Exception as err:
         # the things we need to do here :(
         # because execnet magic, we cannot catch this as
@@ -185,3 +186,5 @@ def check(conn, command, exit=False, timeout=None, **kw):
                 )
     if exit:
         conn.exit()
+    return response
+
