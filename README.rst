@@ -24,7 +24,7 @@ the very least, has both ``error`` and ``debug``. Those are called for
 This is how it would look with a basic logger passed in::
 
     >>> import logging
-    >>> logging.basiConfig(level=logging.DEBUG)
+    >>> logging.basicConfig(level=logging.DEBUG)
     >>> logger = logging.getLogger('hostname')
     >>> conn = remoto.Connection('hostname', logger=logger)
     >>> run(conn, ['ls', '-a'])
