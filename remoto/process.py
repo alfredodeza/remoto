@@ -171,7 +171,9 @@ def check(conn, command, exit=False, timeout=None, **kw):
         if err.__class__.__name__ == 'TimeoutError':
             msg = 'No data was received after %s seconds, disconnecting...' % timeout
             conn.logger.warning(msg)
-            return
+            # there is no stdout, stderr, or exit code but make the exit code
+            # an error condition (non-zero) regardless
+            return [], [], -1
         else:
             remote_trace = traceback.format_exc()
             remote_error = RemoteError(remote_trace)
