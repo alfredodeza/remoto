@@ -139,8 +139,8 @@ def _remote_check(channel, cmd, **kw):
     process = subprocess.Popen(
         cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, **kw
     )
-    stdout = [line.strip('\n') for line in process.stdout.readlines()]
-    stderr = [line.strip('\n') for line in process.stderr.readlines()]
+    stdout = process.stdout.read().splitlines()
+    stderr = process.stderr.read().splitlines()
     channel.send((stdout, stderr, process.wait()))
 
 
