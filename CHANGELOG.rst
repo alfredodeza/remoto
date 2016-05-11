@@ -1,3 +1,12 @@
+0.0.28
+------
+11-May-2016
+* Avoid needless list comprehension that caused issues with Python 3
+* Do not bare return when clients expect a three item tuple always
+* Fix an issue where ``process.check`` would need to raise exit but the
+  response had an error.
+
+22-Dec-2015
 0.0.27
 ------
 22-Dec-2015
