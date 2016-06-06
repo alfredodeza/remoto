@@ -1,4 +1,5 @@
 import socket
+import sys
 from .lib import execnet
 
 
@@ -8,13 +9,17 @@ from .lib import execnet
 
 class Connection(object):
 
-    def __init__(self, hostname, logger=None, sudo=False, threads=1, eager=True, detect_sudo=False):
+    def __init__(self, hostname, logger=None, sudo=False, threads=1, eager=True,
+                 detect_sudo=False, interpreter=None):
         self.sudo = sudo
         self.hostname = hostname
         self.logger = logger or FakeRemoteLogger()
         self.remote_module = None
         self.channel = None
         self.global_timeout = None  # wait for ever
+
+        self.interpreter = interpreter or 'python%s' % sys.version_info[0]
+
         if eager:
             if detect_sudo:
                 self.sudo = self._detect_sudo()
@@ -53,10 +58,12 @@ class Connection(object):
 
     def _make_connection_string(self, hostname, _needs_ssh=None, use_sudo=None):
         _needs_ssh = _needs_ssh or needs_ssh
+        interpreter = self.interpreter
         if use_sudo is not None:
-            interpreter = 'sudo python' if use_sudo else 'python'
-        else:
-            interpreter = 'sudo python' if self.sudo else 'python'
+            if use_sudo:
+                interpreter = 'sudo ' + interpreter
+        elif self.sudo:
+            interpreter = 'sudo ' + interpreter
         if _needs_ssh(hostname):
             return 'ssh=%s//python=%s' % (hostname, interpreter)
         return 'popen//python=%s' % interpreter

@@ -1,4 +1,5 @@
-from mock import Mock
+import sys
+from mock import Mock, patch
 from py.test import raises
 from remoto import connection
 import fake_module
@@ -82,35 +83,46 @@ class TestModuleExecuteGetAttr(object):
 class TestMakeConnectionString(object):
 
     def test_makes_sudo_python_no_ssh(self):
-        conn = connection.Connection('localhost', sudo=True, eager=False)
+        conn = connection.Connection('localhost', sudo=True, eager=False, interpreter='python')
         conn_string = conn._make_connection_string('localhost', _needs_ssh=lambda x: False)
         assert conn_string == 'popen//python=sudo python'
 
     def test_makes_sudo_python_with_ssh(self):
-        conn = connection.Connection('localhost', sudo=True, eager=False)
+        conn = connection.Connection('localhost', sudo=True, eager=False, interpreter='python')
         conn_string = conn._make_connection_string('localhost', _needs_ssh=lambda x: True)
         assert conn_string == 'ssh=localhost//python=sudo python'
 
     def test_makes_python_no_ssh(self):
-        conn = connection.Connection('localhost', sudo=False, eager=False)
+        conn = connection.Connection('localhost', sudo=False, eager=False, interpreter='python')
         conn_string = conn._make_connection_string('localhost', _needs_ssh=lambda x: False)
         assert conn_string == 'popen//python=python'
 
     def test_makes_python_with_ssh(self):
-        conn = connection.Connection('localhost', sudo=False, eager=False)
+        conn = connection.Connection('localhost', sudo=False, eager=False, interpreter='python')
         conn_string = conn._make_connection_string('localhost', _needs_ssh=lambda x: True)
         assert conn_string == 'ssh=localhost//python=python'
 
     def test_makes_sudo_python_with_forced_sudo(self):
-        conn = connection.Connection('localhost', sudo=True, eager=False)
+        conn = connection.Connection('localhost', sudo=True, eager=False, interpreter='python')
         conn_string = conn._make_connection_string('localhost', _needs_ssh=lambda x: False, use_sudo=True)
         assert conn_string == 'popen//python=sudo python'
 
     def test_does_not_make_sudo_python_with_forced_sudo(self):
-        conn = connection.Connection('localhost', sudo=True, eager=False)
+        conn = connection.Connection('localhost', sudo=True, eager=False, interpreter='python')
         conn_string = conn._make_connection_string('localhost', _needs_ssh=lambda x: False, use_sudo=False)
         assert conn_string == 'popen//python=python'
 
+    def test_detects_python3(self):
+        with patch.object(sys, 'version_info', (3, 5, 1)):
+            conn = connection.Connection('localhost', sudo=True, eager=False)
+            conn_string = conn._make_connection_string('localhost', _needs_ssh=lambda x: False)
+            assert conn_string == 'popen//python=sudo python3'
+
+    def test_detects_python2(self):
+        with patch.object(sys, 'version_info', (2, 7, 11)):
+            conn = connection.Connection('localhost', sudo=False, eager=False)
+            conn_string = conn._make_connection_string('localhost', _needs_ssh=lambda x: True)
+            assert conn_string == 'ssh=localhost//python=python2'
 
 class TestDetectSudo(object):
 
