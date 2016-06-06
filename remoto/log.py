@@ -12,6 +12,8 @@ def reporting(conn, result, timeout=None):
         try:
             received = result.receive(timeout)
             level_received, message = list(received.items())[0]
+            if not isinstance(message, str):
+                message = message.decode('utf-8')
             log_map[level_received](message.strip('\n'))
         except EOFError:
             break

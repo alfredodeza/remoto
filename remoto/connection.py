@@ -26,9 +26,11 @@ class Connection(object):
             self.gateway = self._make_gateway(hostname)
 
     def _make_gateway(self, hostname):
-        return execnet.makegateway(
+        gateway = execnet.makegateway(
             self._make_connection_string(hostname)
         )
+        gateway.reconfigure(py2str_as_py3str=False, py3str_as_py2str=False)
+        return gateway
 
     def _detect_sudo(self, _execnet=None):
         """
