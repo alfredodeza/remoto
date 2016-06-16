@@ -21,9 +21,16 @@ class Connection(object):
         self.interpreter = interpreter or 'python%s' % sys.version_info[0]
 
         if eager:
-            if detect_sudo:
-                self.sudo = self._detect_sudo()
-            self.gateway = self._make_gateway(hostname)
+            try:
+                if detect_sudo:
+                    self.sudo = self._detect_sudo()
+                self.gateway = self._make_gateway(hostname)
+            except OSError:
+                self.logger.error(
+                    "Can't communicate with remote host, possibly because "
+                    "%s is not installed there" % self.interpreter
+                )
+                raise
 
     def _make_gateway(self, hostname):
         gateway = execnet.makegateway(
