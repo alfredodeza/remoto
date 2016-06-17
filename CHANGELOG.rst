@@ -1,3 +1,8 @@
+0.0.29
+------
+17-May-2016
+* Catch possible errors when remotes are missing the right Python interpreter
+
 0.0.28
 ------
 11-May-2016
