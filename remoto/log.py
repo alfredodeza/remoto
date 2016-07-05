@@ -14,7 +14,7 @@ def reporting(conn, result, timeout=None):
             level_received, message = list(received.items())[0]
             if not isinstance(message, str):
                 message = message.decode('utf-8')
-            log_map[level_received](message.strip('\n'))
+            log_map[level_received](message.strip('\r\n'))
         except EOFError:
             break
         except Exception as err:

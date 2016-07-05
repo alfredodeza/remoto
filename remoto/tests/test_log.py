@@ -36,6 +36,30 @@ class TestReporting(object):
         message = conn.logger.error.call_args[0][0]
         assert message == 'an error message'
 
+    def test_strip_new_line(self):
+        conn = Mock()
+        result = Mock()
+        result.receive.side_effect = [{'error': 'an error message\n'}, EOFError]
+        log.reporting(conn, result)
+        message = conn.logger.error.call_args[0][0]
+        assert message == 'an error message'
+
+    def test_strip_new_line_and_carriage_return(self):
+        conn = Mock()
+        result = Mock()
+        result.receive.side_effect = [{'error': 'an error message\r\n'}, EOFError]
+        log.reporting(conn, result)
+        message = conn.logger.error.call_args[0][0]
+        assert message == 'an error message'
+
+    def test_strip_return(self):
+        conn = Mock()
+        result = Mock()
+        result.receive.side_effect = [{'error': 'an error message\r'}, EOFError]
+        log.reporting(conn, result)
+        message = conn.logger.error.call_args[0][0]
+        assert message == 'an error message'
+
     def test_timeout_error(self):
         conn = Mock()
         result = Mock()
