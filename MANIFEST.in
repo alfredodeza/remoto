@@ -2,4 +2,3 @@ include setup.py
 include LICENSE
 include README.rst
 include vendor.py
-recursive-include remoto/tests *
