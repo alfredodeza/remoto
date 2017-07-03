@@ -1,4 +1,4 @@
-from .lib import execnet
+import execnet
 
 HostNotFound = execnet.HostNotFound
 RemoteError = execnet.RemoteError

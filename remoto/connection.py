@@ -1,6 +1,6 @@
 import socket
 import sys
-from .lib import execnet
+import execnet
 
 
 #
