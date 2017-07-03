@@ -2,7 +2,7 @@ import sys
 from mock import Mock, patch
 from py.test import raises
 from remoto import connection
-import fake_module
+from . import fake_module
 
 
 class FakeSocket(object):
