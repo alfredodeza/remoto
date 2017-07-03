@@ -1,4 +1,4 @@
-from .lib import execnet
+import execnet
 from .connection import Connection, FakeRemoteLogger
 
 
