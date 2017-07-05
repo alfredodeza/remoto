@@ -1,3 +1,12 @@
+0.0.30
+------
+05-Jul-2016
+
+* Fix test issue with py3
+* Remove vendored execnet
+* Include tests when building
+* Strip carriage-returns from messages in logs
+
 0.0.29
 ------
 17-May-2016
