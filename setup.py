@@ -13,7 +13,7 @@ setup(
     description = 'Execute remote commands or processes.',
     packages = find_packages(),
     author = 'Alfredo Deza',
-    author_email = 'contact [at] deza.pe',
+    author_email = 'contact@deza.pe',
     version = metadata['version'],
     url = 'http://github.com/alfredodeza/remoto',
     license = "MIT",
