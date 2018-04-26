@@ -119,6 +119,7 @@ class ModuleExecute(object):
                 # Error will come as a string of a traceback, remove everything
                 # up to the actual exception since we do get garbage otherwise
                 # that points to non-existent lines in the compiled code
+                exc_line = str(error)
                 for tb_line in reversed(str(error).split('\n')):
                     if tb_line:
                         exc_line = tb_line
