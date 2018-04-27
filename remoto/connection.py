@@ -10,7 +10,7 @@ import execnet
 class Connection(object):
 
     def __init__(self, hostname, logger=None, sudo=False, threads=1, eager=True,
-                 detect_sudo=False, interpreter=None):
+                 detect_sudo=False, interpreter=None, continuous=False):
         self.sudo = sudo
         self.hostname = hostname
         self.logger = logger or FakeRemoteLogger()
@@ -19,6 +19,7 @@ class Connection(object):
         self.global_timeout = None  # wait for ever
 
         self.interpreter = interpreter or 'python%s' % sys.version_info[0]
+        self.continuous = continuous
 
         if eager:
             try:
@@ -91,16 +92,17 @@ class Connection(object):
         self.gateway.exit()
 
     def import_module(self, module):
-        self.remote_module = ModuleExecute(self.gateway, module, self.logger)
+        self.remote_module = ModuleExecute(self.gateway, module, self.logger, self.continuous)
         return self.remote_module
 
 
 class ModuleExecute(object):
 
-    def __init__(self, gateway, module, logger=None):
+    def __init__(self, gateway, module, logger=None, continuous=False):
         self.channel = gateway.remote_exec(module)
         self.module = module
         self.logger = logger
+        self.continuous = continuous
 
     def __getattr__(self, name):
         if not hasattr(self.module, name):
@@ -126,7 +128,26 @@ class ModuleExecute(object):
                         break
                 raise RuntimeError(exc_line)
 
-        return wrapper
+        def wrapper_continuous(*args):
+            arguments = self._convert_args(args)
+            if docstring:
+                self.logger.debug(docstring)
+            self.channel.send("%s(%s)" % (name, arguments))
+            try:
+                for item in self.channel:
+                    yield item
+            except Exception as error:
+                # Error will come as a string of a traceback, remove everything
+                # up to the actual exception since we do get garbage otherwise
+                # that points to non-existent lines in the compiled code
+                exc_line = str(error)
+                for tb_line in reversed(str(error).split('\n')):
+                    if tb_line:
+                        exc_line = tb_line
+                        break
+                raise RuntimeError(exc_line)
+
+        return wrapper_continuous if self.continuous else wrapper
 
     def _get_func_doc(self, func):
         try:
