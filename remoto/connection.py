@@ -135,7 +135,10 @@ class ModuleExecute(object):
             self.channel.send("%s(%s)" % (name, arguments))
             try:
                 for item in self.channel:
-                    yield item
+                    if item is None:
+                        yield item
+                    else:
+                        self.channel.close()
             except Exception as error:
                 # Error will come as a string of a traceback, remove everything
                 # up to the actual exception since we do get garbage otherwise
