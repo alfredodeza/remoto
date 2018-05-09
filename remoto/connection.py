@@ -135,7 +135,7 @@ class ModuleExecute(object):
             self.channel.send("%s(%s)" % (name, arguments))
             try:
                 for item in self.channel:
-                    if item is None:
+                    if item is not None:
                         yield item
                     else:
                         self.channel.close()
