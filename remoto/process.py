@@ -74,7 +74,7 @@ def _remote_run(channel, cmd, **kw):
             channel.send({'warning': "command returned non-zero exit status: %s" % returncode})
 
 
-def extend_path(conn, arguments):
+def extend_env(conn, arguments):
     """
     get the remote environment's env so we can explicitly add the path without
     wiping out everything
@@ -91,6 +91,9 @@ def extend_path(conn, arguments):
     path = env.get('PATH', '')
     env['PATH'] = path + '/usr/local/bin:/bin:/usr/bin:/usr/local/sbin:/usr/sbin:/sbin'
     arguments['env'] = env
+    if arguments.get('extend_env'):
+        for key, value in arguments['extend_env'].items():
+            arguments['env'][key] = value
 
     return arguments
 
@@ -110,7 +113,7 @@ def run(conn, command, exit=False, timeout=None, **kw):
     if not kw.get('env'):
         # get the remote environment's env so we can explicitly add
         # the path without wiping out everything
-        kw = extend_path(conn, kw)
+        kw = extend_env(conn, kw)
 
     timeout = timeout or conn.global_timeout
     conn.logger.info('Running command: %s' % ' '.join(admin_command(conn.sudo, command)))
