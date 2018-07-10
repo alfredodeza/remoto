@@ -1,3 +1,10 @@
+0.0.31
+------
+10-Jul-2018
+
+* Extend environment variables, do not overwrite
+
+
 0.0.30
 ------
 05-Jul-2016
