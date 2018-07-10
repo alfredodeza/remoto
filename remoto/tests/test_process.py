@@ -11,14 +11,23 @@ class TestExtendPath(object):
         fake_conn = Mock()
         fake_conn.gateway.remote_exec.return_value = fake_conn
         fake_conn.receive.return_value = {}
-        result = process.extend_path(fake_conn, {})
+        result = process.extend_env(fake_conn, {})
         assert result['env']['PATH'] == self.path
 
     def test_custom_path_does_not_get_overridden(self):
         fake_conn = Mock()
         fake_conn.gateway.remote_exec.return_value = fake_conn
         fake_conn.receive.return_value = {'PATH': '/home/alfredo/bin'}
-        result = process.extend_path(fake_conn, {})
+        result = process.extend_env(fake_conn, {})
         new_path = result['env']['PATH']
         assert new_path.endswith(self.path)
         assert '/home/alfredo/bin' in new_path
+
+    def test_custom_env_var_extends_existing_env(self):
+        fake_conn = Mock()
+        fake_conn.gateway.remote_exec.return_value = fake_conn
+        fake_conn.receive.return_value = {'PATH': '/home/alfredo/bin'}
+        result = process.extend_env(fake_conn, {'extend_env': {'CEPH_VOLUME_DEBUG': '1'}})
+        new_path = result['env']['PATH']
+        assert result['env']['PATH'].endswith(self.path)
+        assert result['env']['CEPH_VOLUME_DEBUG'] == '1'
