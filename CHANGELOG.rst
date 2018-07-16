@@ -1,3 +1,11 @@
+0.0.32
+------
+16-Jul-2018
+
+* ``extend_env`` needs to be removed from ``**kw`` as it is being passed onto
+  subprocess, which renders it invalid
+
+
 0.0.31
 ------
 10-Jul-2018
