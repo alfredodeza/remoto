@@ -94,7 +94,7 @@ def extend_env(conn, arguments):
     if arguments.get('extend_env'):
         for key, value in arguments['extend_env'].items():
             arguments['env'][key] = value
-
+    arguments.pop('extend_env')
     return arguments
 
 
