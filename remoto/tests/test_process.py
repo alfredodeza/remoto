@@ -31,3 +31,10 @@ class TestExtendPath(object):
         new_path = result['env']['PATH']
         assert result['env']['PATH'].endswith(self.path)
         assert result['env']['CEPH_VOLUME_DEBUG'] == '1'
+
+    def test_extend_env_gets_removed(self):
+        fake_conn = Mock()
+        fake_conn.gateway.remote_exec.return_value = fake_conn
+        fake_conn.receive.return_value = {'PATH': '/home/alfredo/bin'}
+        result = process.extend_env(fake_conn, {'extend_env': {'CEPH_VOLUME_DEBUG': '1'}})
+        assert result.get('extend_env') is None
