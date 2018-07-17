@@ -1,3 +1,10 @@
+0.0.33
+------
+17-Jul-2018
+
+* ``extend_env`` needs to be removed from ``**kw`` **only** when present.
+
+
 0.0.32
 ------
 16-Jul-2018
