@@ -160,7 +160,7 @@ def check(conn, command, exit=False, timeout=None, **kw):
     if not kw.get('env'):
         # get the remote environment's env so we can explicitly add
         # the path without wiping out everything
-        kw = extend_path(conn, kw)
+        kw = extend_env(conn, kw)
 
     conn.logger.info('Running command: %s' % ' '.join(admin_command(conn.sudo, command)))
     result = conn.execute(_remote_check, cmd=command, **kw)
