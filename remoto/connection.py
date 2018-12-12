@@ -10,9 +10,10 @@ import execnet
 class Connection(object):
 
     def __init__(self, hostname, logger=None, sudo=False, threads=1, eager=True,
-                 detect_sudo=False, interpreter=None):
+                 detect_sudo=False, interpreter=None, ssh_options=None):
         self.sudo = sudo
         self.hostname = hostname
+        self.ssh_options = ssh_options
         self.logger = logger or FakeRemoteLogger()
         self.remote_module = None
         self.channel = None
@@ -74,7 +75,11 @@ class Connection(object):
         elif self.sudo:
             interpreter = 'sudo ' + interpreter
         if _needs_ssh(hostname):
-            return 'ssh=%s//python=%s' % (hostname, interpreter)
+            if self.ssh_options:
+                return 'ssh=%s %s//python=%s' % (
+                        self.ssh_options, hostname, interpreter)
+            else:
+                return 'ssh=%s//python=%s' % (hostname, interpreter)
         return 'popen//python=%s' % interpreter
 
     def __enter__(self):
