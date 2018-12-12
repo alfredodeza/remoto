@@ -1,3 +1,10 @@
+0.0.34
+------
+12-Dec-2019
+
+* Allow ``ssh_options`` to extend ssh flags in the ``Connection()`` object
+
+
 0.0.33
 ------
 17-Jul-2018
