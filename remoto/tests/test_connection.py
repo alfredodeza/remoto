@@ -92,6 +92,11 @@ class TestMakeConnectionString(object):
         conn_string = conn._make_connection_string('localhost', _needs_ssh=lambda x: True)
         assert conn_string == 'ssh=localhost//python=sudo python'
 
+    def test_makes_sudo_python_with_ssh_options(self):
+        conn = connection.Connection('localhost', sudo=True, eager=False, interpreter='python', ssh_options='-F vagrant_ssh_config')
+        conn_string = conn._make_connection_string('localhost', _needs_ssh=lambda x: True)
+        assert conn_string == 'ssh=-F vagrant_ssh_config localhost//python=sudo python'
+
     def test_makes_python_no_ssh(self):
         conn = connection.Connection('localhost', sudo=False, eager=False, interpreter='python')
         conn_string = conn._make_connection_string('localhost', _needs_ssh=lambda x: False)
