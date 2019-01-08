@@ -1,6 +1,14 @@
+0.0.35
+------
+8-Jan-2019
+
+* Fix the botched 0.0.34 version which had stale commits from 0.0.32 - No code
+  changes.
+
+
 0.0.34
 ------
-12-Dec-2019
+12-Dec-2018
 
 * Allow ``ssh_options`` to extend ssh flags in the ``Connection()`` object
 
