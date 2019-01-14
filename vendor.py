@@ -99,3 +99,12 @@ def vendorize(vendor_requirements):
             source = library[0]
             destination = None
         vendor_library(source, destination)
+
+
+if __name__ == '__main__':
+    # XXX define this in one place, so that we avoid making updates
+    # in two places
+    vendorize([
+        ('execnet/execnet',),
+        ('apipkg/apipkg.py',),
+    ])
