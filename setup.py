@@ -17,10 +17,13 @@ from setuptools import setup, find_packages
 
 if os.environ.get('REMOTO_NO_VENDOR'):
     clean_vendor('execnet')
+    install_requires=['execnet']
 else:
     vendorize([
-        ('execnet', '1.2post2', 'https://github.com/alfredodeza/execnet'),
+        ('execnet/execnet',),
+        ('apipkg/apipkg.py',),
     ])
+    install_requires=[]
 
 
 setup(
@@ -34,6 +37,7 @@ setup(
     license = "MIT",
     zip_safe = False,
     keywords = "remote, commands, unix, ssh, socket, execute, terminal",
+    install_requires=install_requires,
     long_description = long_description,
     classifiers = [
         'Development Status :: 4 - Beta',
