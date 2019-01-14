@@ -1,7 +1,6 @@
 import subprocess
 import os
 from os import path
-import re
 import traceback
 import sys
 
@@ -28,12 +27,15 @@ def run(cmd):
         print_error([], traceback.format_exc(error).split('\n'))
         raise SystemExit(1)
 
-    if result.wait():
-        print_error(result.stdout.readlines(), result.stderr.readlines())
+    err, out = result.communicate()
+    if result.returncode:
+        print_error(out.split('\n'), err.split('\n'))
+
+    return result.returncode
 
 
 def print_error(stdout, stderr):
-    sys.stderr.write('*\n'*80)
+    sys.stderr.write('*'*80+'\n')
     sys.stderr.write(str(error_msg)+'\n')
     for line in stdout:
         sys.stderr.write(str(line)+'\n')
@@ -42,29 +44,21 @@ def print_error(stdout, stderr):
     sys.stderr.write('*'*80+'\n')
 
 
-def vendor_library(name, version, git_repo):
+def vendor_library(source, destination):
     this_dir = path.dirname(path.abspath(__file__))
-    vendor_dest = path.join(this_dir, 'remoto/lib/vendor/%s' % name)
-    vendor_init = path.join(vendor_dest, '__init__.py')
-    vendor_src = path.join(this_dir, name)
-    vendor_module = path.join(vendor_src, name)
-    current_dir = os.getcwd()
+    vendor_dir = os.path.join(this_dir, 'vendor')
+    vendor_source_path = os.path.join(vendor_dir, source)
+    if destination is None:
+        vendor_destination = path.join(this_dir, 'remoto/lib/vendor/')
+    else:
+        vendor_destination = path.join(this_dir, 'remoto/lib/vendor/%s' % destination)
+    vendor_source = path.join(vendor_dir, source)
 
-    if path.exists(vendor_src):
-        run(['rm', '-rf', vendor_src])
-
-    if path.exists(vendor_init):
-        module_file = open(vendor_init).read()
-        metadata = dict(re.findall(r"__([a-z]+)__\s*=\s*['\"]([^'\"]*)['\"]", module_file))
-        if metadata.get('version') != version:
-            run(['rm', '-rf', vendor_dest])
-
-    if not path.exists(vendor_dest):
-        run(['git', 'clone', git_repo])
-        os.chdir(vendor_src)
-        run(['git', 'checkout', version])
-        run(['mv', vendor_module, vendor_dest])
-    os.chdir(current_dir)
+    #if os.path.isfile(vendor_source_path):
+    #    vendor_destination = path.join(this_dir, 'remoto/lib/vendor/')
+    #    vendor_destination = 'remoto/lib/vendor/'
+    #if not path.exists(vendor_destination):
+    run(['cp', '-r', vendor_source, vendor_destination])
 
 
 def clean_vendor(name):
@@ -81,25 +75,27 @@ def vendorize(vendor_requirements):
     """
     This is the main entry point for vendorizing requirements. It expects
     a list of tuples that should contain the name of the library and the
-    version.
+    destination.
 
-    For example, a library ``foo`` with version ``0.0.1`` would look like::
+    For example, a library ``foo.py`` would look like::
 
         vendor_requirements = [
-            ('foo', '0.0.1', 'https://example.com/git_repo'),
+            ('foo.py')
         ]
+
+    Optionally, the destination name can be altered::
+
+        vendor_requirements = [
+            ('foo/__init__.py', 'foo.py')
+        ]
+
+    All vendored libraries go into remoto/lib/vendor/
     """
 
     for library in vendor_requirements:
-        name, version, repo = library
-        vendor_library(name, version, repo)
-
-
-if __name__ == '__main__':
-    # XXX define this in one place, so that we avoid making updates
-    # in two places
-    vendor_requirements = [
-        ('execnet', '1.2post2', 'https://github.com/alfredodeza/execnet'),
-    ]
-    vendorize(vendor_requirements)
-
+        try:
+            source, destination = library
+        except ValueError:
+            source = library[0]
+            destination = None
+        vendor_library(source, destination)
