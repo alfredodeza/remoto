@@ -1,11 +1,26 @@
+import os
 import re
+
+from vendor import vendorize, clean_vendor
+
 
 module_file = open("remoto/__init__.py").read()
 metadata = dict(re.findall(r"__([a-z]+)__\s*=\s*['\"]([^'\"]*)['\"]", module_file))
 long_description = open('README.rst').read()
-install_requires = []
 
 from setuptools import setup, find_packages
+
+#
+# Add libraries that are not part of install_requires but only if we really
+# want to, specified by the environment flag
+#
+
+if os.environ.get('REMOTO_NO_VENDOR'):
+    clean_vendor('execnet')
+else:
+    vendorize([
+        ('execnet', '1.2post2', 'https://github.com/alfredodeza/execnet'),
+    ])
 
 
 setup(
@@ -19,9 +34,6 @@ setup(
     license = "MIT",
     zip_safe = False,
     keywords = "remote, commands, unix, ssh, socket, execute, terminal",
-    install_requires=[
-        'execnet',
-    ] + install_requires,
     long_description = long_description,
     classifiers = [
         'Development Status :: 4 - Beta',
