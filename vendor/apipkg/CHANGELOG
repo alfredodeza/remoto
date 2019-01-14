@@ -1,0 +1,66 @@
+1.4
+-----------------
+
+- revert the automated version gathering
+
+
+1.3
+----------------------------------------
+
+- fix issue2 - adapt tests on Jython
+- handle jython __pkgpath__ missabstraction when running python from jar files
+- alias modules pointing to unimportable modules will return None for
+  all their attributes instead of raising ImportError.  This addresses
+  python3.4 where any call to getframeinfo() can choke on sys.modules
+  contents if pytest is not installed (because py.test.* imports it).
+- introduce apipkg.distribution_version(name) as helper to
+  obtain the current version number of a package from install metadata
+  its used by default with the package name
+- add an eagerloading option and eagerload automatically
+  if bpython is used (workaround for their monkeypatching)
+
+1.2
+----------------------------------------
+
+- Allow to import from Aliasmodules  (thanks Ralf Schmitt)
+- avoid loading __doc__ early, so ApiModule is now fully lazy
+
+1.1
+----------------------------------------
+
+- copy __doc__ and introduce a new argument to initpkg()
+  (thanks Ralf Schmitt)
+
+- don't use a "0" default for __version__
+
+1.0
+----------------------------------------
+
+- make apipkg memorize the absolute path where a package starts
+  importing so that subsequent chdir + imports won't break.
+
+- allow to alias modules
+
+- allow to use dotted names in alias specifications (thanks Ralf
+  Schmitt).
+
+1.0.0b6
+----------------------------------------
+
+- fix recursive import issue resulting in a superflous KeyError
+- default to __version__ '0' and not set __loader__ or __path__ at all if it
+  doesn't exist on the underlying init module
+
+1.0.0b5
+----------------------------------------
+
+- fixed MANIFEST.in
+- also transfer __loader__ attribute (thanks Ralf Schmitt)
+- compat fix for BPython
+
+1.0.0b3 (compared to 1.0.0b2)
+------------------------------------
+
+- added special __onfirstaccess__ attribute whose value will
+  be called on the first attribute access of an apimodule.
+
