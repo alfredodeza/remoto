@@ -1,5 +1,6 @@
 import execnet
-from .connection import Connection, FakeRemoteLogger
+from remoto.backends import basic_remote_logger
+from remoto.backends import BaseConnection as Connection
 
 
 class _RSync(execnet.RSync):
@@ -26,7 +27,7 @@ def rsync(hosts, source, destination, logger=None, sudo=False):
     same. This deviates from what execnet does because it has the flexibility
     to push to different locations.
     """
-    logger = logger or FakeRemoteLogger()
+    logger = logger or basic_remote_logger()
     sync = _RSync(source, logger=logger)
 
     # setup_targets
