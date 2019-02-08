@@ -3,6 +3,7 @@ from mock import Mock, patch
 from py.test import raises
 from remoto import backends
 from remoto.tests import fake_module
+from remoto.tests.conftest import Capture, Factory
 
 
 class FakeSocket(object):
@@ -50,6 +51,21 @@ class TestLegacyRemoteModule(object):
     def test_importing_it_returns_the_module_too(self):
         remote_foo = self.conn.import_module(fake_module)
         assert remote_foo.module == fake_module
+
+    def test_execute_the_remote_module_send(self):
+        stub_channel = Factory(send=Capture(), receive=Capture())
+        self.conn.gateway.channel = self.conn.gateway
+        remote_foo = self.conn.import_module(fake_module)
+        remote_foo.channel = stub_channel
+        remote_foo.function('argument')
+        assert stub_channel.send.calls[0]['args'][0] == "function('argument')"
+
+    def test_execute_the_remote_module_receive(self):
+        stub_channel = Factory(receive=Capture(return_values=[True]), send=Capture())
+        self.conn.gateway.channel = self.conn.gateway
+        remote_foo = self.conn.import_module(fake_module)
+        remote_foo.channel = stub_channel
+        assert remote_foo.function('argument') is True
 
 
 class TestLegacyModuleExecuteArgs(object):
