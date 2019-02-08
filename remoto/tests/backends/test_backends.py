@@ -1,8 +1,8 @@
 import sys
 from mock import Mock, patch
 from py.test import raises
-from remoto import connection
-from . import fake_module
+from remoto import backends
+from remoto.tests import fake_module
 
 
 class FakeSocket(object):
@@ -16,19 +16,19 @@ class TestNeedsSsh(object):
 
     def test_short_hostname_matches(self):
         socket = FakeSocket('foo.example.org')
-        assert connection.needs_ssh('foo', socket) is False
+        assert backends.needs_ssh('foo', socket) is False
 
     def test_long_hostname_matches(self):
         socket = FakeSocket('foo.example.org')
-        assert connection.needs_ssh('foo.example.org', socket) is False
+        assert backends.needs_ssh('foo.example.org', socket) is False
 
     def test_hostname_does_not_match(self):
         socket = FakeSocket('foo')
-        assert connection.needs_ssh('meh', socket) is True
+        assert backends.needs_ssh('meh', socket) is True
 
     def test_fqdn_hostname_matches_short_hostname(self):
         socket = FakeSocket('foo', getfqdn='foo.example.org')
-        assert connection.needs_ssh('foo.example.org', socket) is False
+        assert backends.needs_ssh('foo.example.org', socket) is False
 
 
 class FakeGateway(object):
@@ -37,10 +37,10 @@ class FakeGateway(object):
         pass
 
 
-class TestRemoteModule(object):
+class TestLegacyRemoteModule(object):
 
     def setup(self):
-        self.conn = connection.Connection('localhost', sudo=True, eager=False)
+        self.conn = backends.BaseConnection('localhost', sudo=True, eager=False)
         self.conn.gateway = FakeGateway()
 
     def test_importing_it_sets_it_as_remote_module(self):
@@ -52,10 +52,10 @@ class TestRemoteModule(object):
         assert remote_foo.module == fake_module
 
 
-class TestModuleExecuteArgs(object):
+class TestLegacyModuleExecuteArgs(object):
 
     def setup(self):
-        self.remote_module = connection.ModuleExecute(FakeGateway(), None)
+        self.remote_module = backends.LegacyModuleExecute(FakeGateway(), None)
 
     def test_single_argument(self):
         assert self.remote_module._convert_args(('foo',)) == "'foo'"
@@ -69,10 +69,10 @@ class TestModuleExecuteArgs(object):
         assert self.remote_module._convert_args(args) == "{'some key': 1}"
 
 
-class TestModuleExecuteGetAttr(object):
+class TestLegacyModuleExecuteGetAttr(object):
 
     def setup(self):
-        self.remote_module = connection.ModuleExecute(FakeGateway(), None)
+        self.remote_module = backends.LegacyModuleExecute(FakeGateway(), None)
 
     def test_raise_attribute_error(self):
         with raises(AttributeError) as err:
@@ -83,51 +83,58 @@ class TestModuleExecuteGetAttr(object):
 class TestMakeConnectionString(object):
 
     def test_makes_sudo_python_no_ssh(self):
-        conn = connection.Connection('localhost', sudo=True, eager=False, interpreter='python')
+        conn = backends.BaseConnection('localhost', sudo=True, eager=False, interpreter='python')
         conn_string = conn._make_connection_string('localhost', _needs_ssh=lambda x: False)
         assert conn_string == 'popen//python=sudo python'
 
     def test_makes_sudo_python_with_ssh(self):
-        conn = connection.Connection('localhost', sudo=True, eager=False, interpreter='python')
+        conn = backends.BaseConnection('localhost', sudo=True, eager=False, interpreter='python')
         conn_string = conn._make_connection_string('localhost', _needs_ssh=lambda x: True)
         assert conn_string == 'ssh=localhost//python=sudo python'
 
     def test_makes_sudo_python_with_ssh_options(self):
-        conn = connection.Connection('localhost', sudo=True, eager=False, interpreter='python', ssh_options='-F vagrant_ssh_config')
+        conn = backends.BaseConnection(
+            'localhost', sudo=True, eager=False,
+            interpreter='python', ssh_options='-F vagrant_ssh_config')
         conn_string = conn._make_connection_string('localhost', _needs_ssh=lambda x: True)
         assert conn_string == 'ssh=-F vagrant_ssh_config localhost//python=sudo python'
 
     def test_makes_python_no_ssh(self):
-        conn = connection.Connection('localhost', sudo=False, eager=False, interpreter='python')
+        conn = backends.BaseConnection('localhost', sudo=False, eager=False, interpreter='python')
         conn_string = conn._make_connection_string('localhost', _needs_ssh=lambda x: False)
         assert conn_string == 'popen//python=python'
 
     def test_makes_python_with_ssh(self):
-        conn = connection.Connection('localhost', sudo=False, eager=False, interpreter='python')
+        conn = backends.BaseConnection('localhost', sudo=False, eager=False, interpreter='python')
         conn_string = conn._make_connection_string('localhost', _needs_ssh=lambda x: True)
         assert conn_string == 'ssh=localhost//python=python'
 
     def test_makes_sudo_python_with_forced_sudo(self):
-        conn = connection.Connection('localhost', sudo=True, eager=False, interpreter='python')
-        conn_string = conn._make_connection_string('localhost', _needs_ssh=lambda x: False, use_sudo=True)
+        conn = backends.BaseConnection('localhost', sudo=True, eager=False, interpreter='python')
+        conn_string = conn._make_connection_string(
+            'localhost', _needs_ssh=lambda x: False, use_sudo=True
+        )
         assert conn_string == 'popen//python=sudo python'
 
     def test_does_not_make_sudo_python_with_forced_sudo(self):
-        conn = connection.Connection('localhost', sudo=True, eager=False, interpreter='python')
-        conn_string = conn._make_connection_string('localhost', _needs_ssh=lambda x: False, use_sudo=False)
+        conn = backends.BaseConnection('localhost', sudo=True, eager=False, interpreter='python')
+        conn_string = conn._make_connection_string(
+            'localhost', _needs_ssh=lambda x: False, use_sudo=False
+        )
         assert conn_string == 'popen//python=python'
 
     def test_detects_python3(self):
         with patch.object(sys, 'version_info', (3, 5, 1)):
-            conn = connection.Connection('localhost', sudo=True, eager=False)
+            conn = backends.BaseConnection('localhost', sudo=True, eager=False)
             conn_string = conn._make_connection_string('localhost', _needs_ssh=lambda x: False)
             assert conn_string == 'popen//python=sudo python3'
 
     def test_detects_python2(self):
         with patch.object(sys, 'version_info', (2, 7, 11)):
-            conn = connection.Connection('localhost', sudo=False, eager=False)
+            conn = backends.BaseConnection('localhost', sudo=False, eager=False)
             conn_string = conn._make_connection_string('localhost', _needs_ssh=lambda x: True)
             assert conn_string == 'ssh=localhost//python=python2'
+
 
 class TestDetectSudo(object):
 
@@ -139,10 +146,10 @@ class TestDetectSudo(object):
 
     def test_does_not_need_sudo(self):
         self.execnet.receive.return_value = 'root'
-        conn = connection.Connection('localhost', sudo=True, eager=False)
+        conn = backends.BaseConnection('localhost', sudo=True, eager=False)
         assert conn._detect_sudo(_execnet=self.execnet) is False
 
     def test_does_need_sudo(self):
         self.execnet.receive.return_value = 'alfredo'
-        conn = connection.Connection('localhost', sudo=True, eager=False)
+        conn = backends.BaseConnection('localhost', sudo=True, eager=False)
         assert conn._detect_sudo(_execnet=self.execnet) is True
