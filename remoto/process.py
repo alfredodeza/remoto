@@ -115,6 +115,8 @@ def run(conn, command, exit=False, timeout=None, **kw):
         # the path without wiping out everything
         kw = extend_env(conn, kw)
 
+    command = conn.cmd(command)
+
     timeout = timeout or conn.global_timeout
     conn.logger.info('Running command: %s' % ' '.join(admin_command(conn.sudo, command)))
     result = conn.execute(_remote_run, cmd=command, **kw)
@@ -138,12 +140,27 @@ def run(conn, command, exit=False, timeout=None, **kw):
 
 def _remote_check(channel, cmd, **kw):
     import subprocess
-
+    stdin = kw.pop('stdin', None)
     process = subprocess.Popen(
-        cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, **kw
+        cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, stdin=subprocess.PIPE, **kw
     )
-    stdout = process.stdout.read().splitlines()
-    stderr = process.stderr.read().splitlines()
+
+    if stdin:
+        if not isinstance(stdin, bytes):
+            stdin.encode('utf-8', errors='ignore')
+        stdout_stream, stderr_stream = process.communicate(stdin)
+    else:
+        stdout_stream = process.stdout.read()
+        stderr_stream = process.stderr.read()
+
+    try:
+        stdout_stream = stdout_stream.decode('utf-8')
+        stderr_stream = stderr_stream.decode('utf-8')
+    except AttributeError:
+        pass
+
+    stdout = stdout_stream.splitlines()
+    stderr = stderr_stream.splitlines()
     channel.send((stdout, stderr, process.wait()))
 
 
@@ -155,6 +172,8 @@ def check(conn, command, exit=False, timeout=None, **kw):
     This helper function *does not* provide any logging as it is the caller's
     responsibility to do so.
     """
+    command = conn.cmd(command)
+
     stop_on_error = kw.pop('stop_on_error', True)
     timeout = timeout or conn.global_timeout
     if not kw.get('env'):
@@ -192,4 +211,3 @@ def check(conn, command, exit=False, timeout=None, **kw):
     if exit:
         conn.exit()
     return response
-
