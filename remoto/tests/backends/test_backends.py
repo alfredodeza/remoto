@@ -1,6 +1,6 @@
 import sys
 from mock import Mock, patch
-from py.test import raises
+import pytest
 from remoto import backends
 from remoto.tests import fake_module
 from remoto.tests.conftest import Capture, Factory
@@ -30,6 +30,10 @@ class TestNeedsSsh(object):
     def test_fqdn_hostname_matches_short_hostname(self):
         socket = FakeSocket('foo', getfqdn='foo.example.org')
         assert backends.needs_ssh('foo.example.org', socket) is False
+
+    @pytest.mark.parametrize('hostname', ['localhost', '127.0.0.1', '127.0.1.1'])
+    def test_local_hostname(self, hostname):
+        assert backends.needs_ssh(hostname) is False
 
 
 class FakeGateway(object):
@@ -91,7 +95,7 @@ class TestLegacyModuleExecuteGetAttr(object):
         self.remote_module = backends.LegacyModuleExecute(FakeGateway(), None)
 
     def test_raise_attribute_error(self):
-        with raises(AttributeError) as err:
+        with pytest.raises(AttributeError) as err:
             self.remote_module.foo()
         assert err.value.args[0] == 'module None does not have attribute foo'
 
