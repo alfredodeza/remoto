@@ -261,6 +261,8 @@ def needs_ssh(hostname, _socket=None):
     Obtains remote hostname of the socket and cuts off the domain part
     of its FQDN.
     """
+    if hostname.lower() in ['localhost', '127.0.0.1', '127.0.1.1']:
+        return False
     _socket = _socket or socket
     fqdn = _socket.getfqdn()
     if hostname == fqdn:
