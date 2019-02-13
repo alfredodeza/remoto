@@ -190,7 +190,7 @@ class LegacyModuleExecute(object):
 
 dump_template = """
 if __name__ == '__main__':
-    import json
+    import json, traceback
     obj = {'return': None, 'exception': None}
     try:
         obj['return'] = %s%s
@@ -235,6 +235,19 @@ class JsonModuleExecute(object):
                 source = self._module_source + dump_template % (name, '()')
 
             out, err, code = check(self.conn, ['python'], stdin=source.encode('utf-8'))
+            if not out:
+                if not err:
+                    err = [
+                        'Traceback (most recent call last):',
+                        '    File "<stdin>", in <module>',
+                        'Exception: error calling "%s"' % name
+                    ]
+                if code:
+                    raise Exception('Unexpected remote exception: \n%s' % '\n'.join(err))
+                # at this point, there was no stdout, and the exit code was 0,
+                # we must return so that we don't fail trying to serialize back
+                # the JSON
+                return
             response = json.loads(out[0])
             if response['exception']:
                 raise Exception(response['exception'])
