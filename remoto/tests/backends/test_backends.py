@@ -2,6 +2,7 @@ import sys
 from mock import Mock, patch
 import pytest
 from remoto import backends
+from remoto.backends import local
 from remoto.tests import fake_module
 from remoto.tests.conftest import Capture, Factory
 
@@ -11,6 +12,44 @@ class FakeSocket(object):
     def __init__(self, gethostname, getfqdn=None):
         self.gethostname = lambda: gethostname
         self.getfqdn = lambda: getfqdn or gethostname
+
+
+class TestJsonModuleExecute(object):
+
+    def test_execute_returns_casted_boolean(self):
+        conn = local.LocalConnection()
+        conn.remote_import_system = 'json'
+        remote_fake_module = conn.import_module(fake_module)
+        assert remote_fake_module.function(None) is True
+
+    def test_execute_can_raise_remote_exceptions(self):
+        conn = local.LocalConnection()
+        conn.remote_import_system = 'json'
+        remote_fake_module = conn.import_module(fake_module)
+        with pytest.raises(Exception) as error:
+            assert remote_fake_module.fails()
+        assert 'Exception: failure from fails() function' in str(error.value)
+
+    def test_execute_can_raise_unexpected_remote_exceptions(self):
+        conn = local.LocalConnection()
+        conn.remote_import_system = 'json'
+        remote_fake_module = conn.import_module(fake_module)
+        with pytest.raises(Exception) as error:
+            remote_fake_module.unexpected_fail()
+        assert 'error calling "unexpected_fail"' in str(error.value)
+        assert 'Unexpected remote exception' in str(error.value)
+
+    def test_execute_noop(self):
+        conn = local.LocalConnection()
+        conn.remote_import_system = 'json'
+        remote_fake_module = conn.import_module(fake_module)
+        assert remote_fake_module.noop() is None
+
+    def test_execute_passes_is_none(self):
+        conn = local.LocalConnection()
+        conn.remote_import_system = 'json'
+        remote_fake_module = conn.import_module(fake_module)
+        assert remote_fake_module.passes() is None
 
 
 class TestNeedsSsh(object):
