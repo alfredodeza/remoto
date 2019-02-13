@@ -1,3 +1,21 @@
+1.0.0
+-----
+13-Feb-2019
+
+* Create other connection backends aside from ssh and local: kubernetes,
+  podman, docker, and openshift.
+* Adds new remote function/module execution model for non-native (for execnet) backends, so that
+  modules will work in backends like kubernetes.
+* Create a helper (``remoto.connection.get()``) for retrieving connection
+  backends based on strings
+* Increase the test coverage.
+* Allow using ``localhost``, ``127.0.0.1``, and ``127.0.1.1`` to detect local
+  connections (before the full hostname was required, as returned by
+  ``socket.gethostname()``)
+* No longer require creating ``logging`` loggers to pass in to connection
+  classes, it will create a basic one when undefined.
+
+
 0.0.35
 ------
 8-Jan-2019
