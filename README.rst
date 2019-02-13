@@ -1,13 +1,14 @@
 remoto
 ======
-A very simplistic remote-command-executor using ``ssh`` and Python in the
-remote end.
+A very simplistic remote-command-executor using connections to hosts (``ssh``,
+local, containers, and several others are supported) and Python in the remote
+end.
 
 All the heavy lifting is done by execnet, while this minimal API provides the
 bare minimum to handle easy logging and connections from the remote end.
 
 ``remoto`` is a bit opinionated as it was conceived to replace helpers and
-remote utilities for ``ceph-deploy`` a tool to run remote commands to configure
+remote utilities for ``ceph-deploy``, a tool to run remote commands to configure
 and setup the distributed file system Ceph.
 
 
@@ -23,10 +24,7 @@ the very least, has both ``error`` and ``debug``. Those are called for
 
 This is how it would look with a basic logger passed in::
 
-    >>> import logging
-    >>> logging.basicConfig(level=logging.DEBUG)
-    >>> logger = logging.getLogger('hostname')
-    >>> conn = remoto.Connection('hostname', logger=logger)
+    >>> conn = remoto.Connection('hostname')
     >>> run(conn, ['ls', '-a'])
     INFO:hostname:Running command: ls -a
     DEBUG:hostname:.
@@ -35,10 +33,8 @@ This is how it would look with a basic logger passed in::
     DEBUG:hostname:.bash_logout
     DEBUG:hostname:.bash_profile
     DEBUG:hostname:.bashrc
-    DEBUG:hostname:.gem
     DEBUG:hostname:.lesshst
     DEBUG:hostname:.pki
-    DEBUG:hostname:.puppet
     DEBUG:hostname:.ssh
     DEBUG:hostname:.vim
     DEBUG:hostname:.viminfo
@@ -59,9 +55,9 @@ Calling remote commands can be done in a few different ways. The most simple
 one is with ``process.run``::
 
     >>> from remoto.process import run
-    >>> from remoto import Connection
-    >>> logger = logging.getLogger('myhost')
-    >>> conn = Connection('myhost', logger=logger)
+    >>> from remoto import connection
+    >>> Connection = connection.get('ssh')
+    >>> conn = Connection('myhost')
     >>> run(conn, ['whoami'])
     INFO:myhost:Running command: whoami
     DEBUG:myhost:root
@@ -89,13 +85,43 @@ to just firing and forgetting (while logging, like ``process.run``).
 
 Remote Functions
 ================
+There are two supported ways to execute functions on the remote side. The
+library that ``remoto`` uses to connect (``execnet``) only supports a few
+backends *natively*, and ``remoto`` has extended this ability for other backend
+connections like kubernetes.
 
-To execute remote functions (ideally) you would need to define them in a module
-and add the following to the end of that module::
+The remote function capabilities are provided by ``LegacyModuleExecute`` and
+``JsonModuleExecute``. By default, both ``ssh`` and ``local`` connection will
+use the legacy execution class, and everything else will use the ``legacy``
+class. The ``ssh`` and ``local`` connections can still be forced to use the new
+module execution by setting::
 
-    if __name__ == '__channelexec__':
-        for item in channel:
-            channel.send(eval(item))
+    conn.remote_import_system = 'json'
+
+
+``json``
+--------
+The default module for ``docker``, ``kubernetes``, ``podman``, and
+``openshift``. It does not require any magic on the module to be executed,
+however it is worth noting that the library *will* add the following bit of
+magic when sending the module to the remote end for execution::
+
+
+    if __name__ == '__main__':
+        import json, traceback
+        obj = {'return': None, 'exception': None}
+        try:
+            obj['return'] = function_name(*a)
+        except Exception:
+            obj['exception'] = traceback.format_exc()
+        try:
+            print(json.dumps(obj).decode('utf-8'))
+        except AttributeError:
+            print(json.dumps(obj))
+
+This allows the system to execute ``function_name`` (replaced by the real
+function to be executed with its arguments), grab any results, serialize them
+with ``json`` and send them back for local processing.
 
 
 If you had a function in a module named ``foo`` that looks like this::
@@ -127,8 +153,22 @@ arguments, just normal Python data structures, like tuples, lists and
 dictionaries. Also safe to use are ints and strings.
 
 
-Automatic detection for remote connections
-------------------------------------------
+``legacy``
+----------
+When using the ``legacy`` execution model (the default for ``local`` and
+``ssh`` connections), modules are required to add the following to the end of
+that module::
+
+    if __name__ == '__channelexec__':
+        for item in channel:
+            channel.send(eval(item))
+
+This piece of code is fully compatible with the ``json`` execution model, and
+would not cause conflicts.
+
+
+Automatic detection for ssh connections
+---------------------------------------
 There is automatic detection for the need to connect remotely (via SSH) or not
 that it is infered by the hostname of the current host (vs. the host that is
 connecting to).
