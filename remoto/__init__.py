@@ -4,4 +4,4 @@ from . import process
 from . import connection
 
 
-__version__ = '0.0.35'
+__version__ = '1.0.0'
