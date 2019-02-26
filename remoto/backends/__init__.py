@@ -243,7 +243,7 @@ class JsonModuleExecute(object):
                         'Exception: error calling "%s"' % name
                     ]
                 if code:
-                    raise Exception('Unexpected remote exception: \n%s' % '\n'.join(err))
+                    raise Exception('Unexpected remote exception: \n%s\n%s' % ('\n'.join(out), '\n'.join(err)))
                 # at this point, there was no stdout, and the exit code was 0,
                 # we must return so that we don't fail trying to serialize back
                 # the JSON
