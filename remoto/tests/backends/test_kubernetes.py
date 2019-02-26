@@ -16,6 +16,22 @@ class TestCommandTemplate(object):
             'rook-ceph-asdf', '--', '/bin/sh', '-c'
         ]
 
+    def test_using_context(self):
+        conn = kubernetes.KubernetesConnection('rook-ceph-asdf', context='4')
+        tmpl = conn.command_template()
+        assert tmpl == [
+            'kubectl', '--context', '4', 'exec', '-i',
+            'rook-ceph-asdf', '--', '/bin/sh', '-c'
+        ]
+
+    def test_using_context_and_namespace(self):
+        conn = kubernetes.KubernetesConnection('rook-ceph-asdf', 'rook-ceph', context='4')
+        tmpl = conn.command_template()
+        assert tmpl == [
+            'kubectl', '--context', '4', 'exec', '-i', '-n', 'rook-ceph',
+            'rook-ceph-asdf', '--', '/bin/sh', '-c'
+        ]
+
 
 class TestCommand(object):
 
