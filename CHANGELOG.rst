@@ -1,3 +1,12 @@
+1.1.0
+-----
+26-Feb-2019
+
+* Allow to specify ``--context`` to kubernetes connections
+* When a remote exception happens using the ``JsonModuleExecute``, include both
+  stderr and stdout.
+
+
 1.0.0
 -----
 13-Feb-2019
