@@ -1,3 +1,11 @@
+1.1.1
+-----
+13-Mar-2019
+
+* Fix an issue with remote Python interpreters that might not be ``python``,
+  like in distros that use ``python3`` or similar.
+
+
 1.1.0
 -----
 26-Feb-2019
