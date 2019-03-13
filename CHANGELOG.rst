@@ -1,3 +1,12 @@
+1.1.2
+-----
+13-Mar-2019
+
+* Try a few different executables (not only ``python``) to check for a working
+  one, in order of preference, starting with ``python3`` and ultimately falling
+  back to the connection interpreter
+
+
 1.1.1
 -----
 13-Mar-2019
