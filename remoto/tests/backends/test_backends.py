@@ -51,6 +51,26 @@ class TestJsonModuleExecute(object):
         remote_fake_module = conn.import_module(fake_module)
         assert remote_fake_module.passes() is None
 
+    def test_execute_wrong_interpreter(self):
+        conn = local.LocalConnection()
+        conn.remote_import_system = 'json'
+        remote_fake_module = conn.import_module(fake_module)
+        remote_fake_module.python_executable = 'python9'
+        with pytest.raises(Exception) as error:
+            remote_fake_module.passes()
+        assert 'Failed to execute command: python9' in str(error.value)
+
+    def test_fallback_interpreter(self, monkeypatch, capsys):
+        monkeypatch.setattr(backends, 'check', lambda *a, **kw: ('', '', 1))
+        conn = local.LocalConnection()
+        conn.remote_import_system = 'json'
+        remote_fake_module = conn.import_module(fake_module)
+        try:
+            remote_fake_module.passes()
+        except Exception:
+            pass
+        assert remote_fake_module.python_executable is not None
+
 
 class TestNeedsSsh(object):
 
@@ -212,3 +232,24 @@ class TestDetectSudo(object):
         self.execnet.receive.return_value = 'alfredo'
         conn = backends.BaseConnection('localhost', sudo=True, eager=False)
         assert conn._detect_sudo(_execnet=self.execnet) is True
+
+
+class TestGetPythonExecutable(object):
+
+    def test_non_zero(self, monkeypatch):
+        monkeypatch.setattr(backends, 'check', lambda *a, **kw: ([], [], 1))
+        conn = local.LocalConnection()
+        result = backends.get_python_executable(conn)
+        assert result == conn.interpreter
+
+    def test_no_stdout(self, monkeypatch):
+        monkeypatch.setattr(backends, 'check', lambda *a, **kw: ([], [], 0))
+        conn = local.LocalConnection()
+        result = backends.get_python_executable(conn)
+        assert result == conn.interpreter
+
+    def test_which(self, monkeypatch):
+        monkeypatch.setattr(backends, 'check', lambda *a, **kw: (['/usr/bin/python17'], [], 0))
+        conn = local.LocalConnection()
+        result = backends.get_python_executable(conn)
+        assert result == '/usr/bin/python17'
