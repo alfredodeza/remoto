@@ -219,6 +219,7 @@ class JsonModuleExecute(object):
         self.module = module
         self._module_source = inspect.getsource(module)
         self.logger = logger
+        self.python_executable = None
 
     def __getattr__(self, name):
         if not hasattr(self.module, name):
@@ -234,7 +235,11 @@ class JsonModuleExecute(object):
             else:
                 source = self._module_source + dump_template % (name, '()')
 
-            out, err, code = check(self.conn, ['python'], stdin=source.encode('utf-8'))
+            # check python interpreter
+            if self.python_executable is None:
+                self.python_executable = get_python_executable(self.conn)
+
+            out, err, code = check(self.conn, [self.python_executable], stdin=source.encode('utf-8'))
             if not out:
                 if not err:
                     err = [
@@ -285,3 +290,22 @@ def needs_ssh(hostname, _socket=None):
     if local_hostname == hostname or local_short_hostname == hostname:
         return False
     return True
+
+
+def get_python_executable(conn):
+    """
+    Try to determine the remote Python version so that it can be used
+    when executing. Avoids the problem of different Python versions, or distros
+    that do not use ``python`` but do ``python3``
+    """
+    out, err, code = check(conn, ['which', 'python'])
+    error_msg = 'Unable to determine python executable, will use "%s"' % conn.interpreter
+    if code:
+        conn.logger.warning(error_msg)
+        return conn.interpreter
+    else:
+        try:
+            return out[0].strip()
+        except IndexError:
+            conn.logger.warning(error_msg)
+            return conn.interpreter
