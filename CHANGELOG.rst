@@ -1,3 +1,10 @@
+1.1.3
+-----
+22-Mar-2019
+
+* No code changes - adding packaging files for Debian
+
+
 1.1.2
 -----
 13-Mar-2019
