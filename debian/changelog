@@ -1,0 +1,13 @@
+remoto (0.0.29-0ubuntu0.16.04.2) xenial; urgency=medium
+
+  * d/patches: drop bundled execnet, rework patches for gbp
+  * d/control: add extended description for lintian
+  * d/control: Build-Depends execnet
+
+ -- Ken Dreyer <kdreyer@redhat.com>  Mon, 03 Jul 2017 16:19:14 -0600
+
+remoto (0.0.29-0ubuntu0.16.04.1) xenial; urgency=medium
+
+  * Latest upstream release
+
+ -- Ken Dreyer <kdreyer@redhat.com>  Thu, 29 Jun 2017 11:22:45 -0600
