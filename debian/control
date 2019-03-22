@@ -10,24 +10,12 @@ Build-Depends:
  python-mock,
  python-pytest,
  python-setuptools,
- python3,
- python3-execnet,
- python3-mock,
- python3-pytest,
- python3-setuptools
 Standards-Version: 3.9.7
 X-Python-Version: >=2.7
 
 Package: python-remoto
 Architecture: all
 Depends: ${misc:Depends}, ${python:Depends}
-Description: Execute remote commands or processes
- A very simplistic remote-command-executor using ssh and Python in the remote
- end.
-
-Package: python3-remoto
-Architecture: all
-Depends: ${misc:Depends}, ${python3:Depends}
 Description: Execute remote commands or processes
  A very simplistic remote-command-executor using ssh and Python in the remote
  end.
