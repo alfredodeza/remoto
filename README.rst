@@ -9,7 +9,9 @@ bare minimum to handle easy logging and connections from the remote end.
 
 ``remoto`` is a bit opinionated as it was conceived to replace helpers and
 remote utilities for ``ceph-deploy``, a tool to run remote commands to configure
-and setup the distributed file system Ceph.
+and setup the distributed file system Ceph. `ceph-medic
+<https://pypi.org/project/ceph-medic/>`_ uses remoto as well to inspect Ceph
+clusters.
 
 
 Example Usage
