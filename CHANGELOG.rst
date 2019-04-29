@@ -1,3 +1,10 @@
+1.1.4
+-----
+29-Apr-2019
+
+* Add ``needs_ssh`` to the ``connection`` module to fix a backwards incompatible change
+
+
 1.1.3
 -----
 22-Mar-2019
