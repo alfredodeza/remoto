@@ -1,7 +1,7 @@
 import logging
 # compatibility for older clients that rely on the previous ``Connection`` class
 from remoto.backends import BaseConnection as Connection # noqa
-from remoto.backends import ssh, openshift, kubernetes, local, podman, docker
+from remoto.backends import ssh, openshift, kubernetes, local, podman, docker, needs_ssh
 
 
 logger = logging.getLogger('remoto')
