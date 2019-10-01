@@ -16,13 +16,14 @@ class BaseConnection(object):
     remote_import_system = 'legacy'
 
     def __init__(self, hostname, logger=None, sudo=False, threads=1, eager=True,
-                 detect_sudo=False, interpreter=None, ssh_options=None):
+                 detect_sudo=False, use_ssh=False, interpreter=None, ssh_options=None):
         self.sudo = sudo
         self.hostname = hostname
         self.ssh_options = ssh_options
         self.logger = logger or basic_remote_logger()
         self.remote_module = None
         self.channel = None
+        self.use_ssh = use_ssh
         self.global_timeout = None  # wait for ever
 
         self.interpreter = interpreter or 'python%s' % sys.version_info[0]
@@ -80,7 +81,8 @@ class BaseConnection(object):
                 interpreter = 'sudo ' + interpreter
         elif self.sudo:
             interpreter = 'sudo ' + interpreter
-        if _needs_ssh(hostname):
+
+        if _needs_ssh(hostname) or self.use_ssh:
             if self.ssh_options:
                 return 'ssh=%s %s//python=%s' % (
                     self.ssh_options, hostname, interpreter
