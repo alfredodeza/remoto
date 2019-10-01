@@ -188,7 +188,12 @@ class TestMakeConnectionString(object):
         conn_string = conn._make_connection_string('localhost', _needs_ssh=lambda x: True)
         assert conn_string == 'ssh=localhost//python=python'
 
-    def test_makes_sudo_python_with_forced_sudo(self):
+    def test_ssh_is_forced(self):
+        conn = backends.BaseConnection('localhost', sudo=False, eager=False, use_ssh=True, interpreter='python')
+        conn_string = conn._make_connection_string('localhost', _needs_ssh=lambda x: False)
+        assert conn_string == 'ssh=localhost//python=python'
+
+    def test_makes_sudo_python_with_forced_ssh(self):
         conn = backends.BaseConnection('localhost', sudo=True, eager=False, interpreter='python')
         conn_string = conn._make_connection_string(
             'localhost', _needs_ssh=lambda x: False, use_sudo=True
