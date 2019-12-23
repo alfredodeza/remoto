@@ -41,7 +41,8 @@ class BaseConnection(object):
                 raise
 
     def _make_gateway(self, hostname):
-        gateway = execnet.makegateway(
+        self.group = execnet.Group()
+        gateway = self.group.makegateway(
             self._make_connection_string(hostname)
         )
         gateway.reconfigure(py2str_as_py3str=False, py3str_as_py2str=False)
@@ -95,7 +96,7 @@ class BaseConnection(object):
         return self
 
     def __exit__(self, exc_type, exc_val, exc_tb):
-        self.exit()
+        self.group.terminate(timeout=1.0)
         return False
 
     def cmd(self, cmd):
@@ -111,7 +112,7 @@ class BaseConnection(object):
         return self.gateway.remote_exec(function, **kw)
 
     def exit(self):
-        self.gateway.exit()
+        self.group.terminate(timeout=1.0)
 
     def import_module(self, module):
         """
