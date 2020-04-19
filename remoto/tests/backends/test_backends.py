@@ -71,6 +71,15 @@ class TestJsonModuleExecute(object):
             pass
         assert remote_fake_module.python_executable is not None
 
+    def test_remote_python(self):
+        import sys
+        remote_python = sys.executable
+        conn = local.LocalConnection()
+        conn.remote_import_system = 'json'
+        remote_fake_module = conn.import_module(fake_module,
+                                                remote_python=remote_python)
+        assert remote_fake_module.remote_interpreter() == remote_python
+
 
 class TestNeedsSsh(object):
 
