@@ -114,7 +114,7 @@ class BaseConnection(object):
     def exit(self):
         self.group.terminate(timeout=1.0)
 
-    def import_module(self, module):
+    def import_module(self, module, remote_python=None):
         """
         Allows remote execution of a local module. Depending on the
         ``remote_import_system`` attribute it may use execnet's implementation
@@ -125,7 +125,8 @@ class BaseConnection(object):
         """
         if self.remote_import_system is not None:
             if self.remote_import_system == 'json':
-                self.remote_module = JsonModuleExecute(self, module, self.logger)
+                self.remote_module = JsonModuleExecute(self, module, self.logger,
+                                                       remote_python=remote_python)
             else:
                 self.remote_module = LegacyModuleExecute(self.gateway, module, self.logger)
         else:
@@ -217,12 +218,12 @@ class JsonModuleExecute(object):
     as well and raised accordingly.
     """
 
-    def __init__(self, conn, module, logger=None):
+    def __init__(self, conn, module, logger=None, remote_python=None):
         self.conn = conn
         self.module = module
         self._module_source = inspect.getsource(module)
         self.logger = logger
-        self.python_executable = None
+        self.python_executable = remote_python
 
     def __getattr__(self, name):
         if not hasattr(self.module, name):
