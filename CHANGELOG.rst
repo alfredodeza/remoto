@@ -1,3 +1,10 @@
+1.2.0
+-----
+20-Apr-2020
+
+* Allow to specify ``python_executable`` for remote execution, helping virtualenvs set remotely.
+
+
 1.1.4
 -----
 29-Apr-2019
