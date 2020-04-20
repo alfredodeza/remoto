@@ -23,3 +23,7 @@ def noop():
 
 def passes():
     pass
+
+
+def remote_interpreter():
+    return sys.executable

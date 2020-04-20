@@ -71,6 +71,24 @@ class TestJsonModuleExecute(object):
             pass
         assert remote_fake_module.python_executable is not None
 
+    def test_python_executable(self):
+        python_executable = sys.executable
+        conn = local.LocalConnection()
+        conn.remote_import_system = 'json'
+        remote_fake_module = conn.import_module(fake_module,
+                                                python_executable=python_executable)
+        assert remote_fake_module.remote_interpreter() == python_executable
+
+    def test_wrong_python_executable(self):
+        python_executable = '/path/to/python'
+        conn = local.LocalConnection()
+        conn.remote_import_system = 'json'
+        remote_fake_module = conn.import_module(fake_module,
+                                                python_executable=python_executable)
+        with pytest.raises(Exception) as error:
+            remote_fake_module.remote_interpreter()
+        assert 'Failed to execute command: {}'.format(python_executable) in str(error.value)
+
 
 class TestNeedsSsh(object):
 
