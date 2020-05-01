@@ -43,7 +43,7 @@ class TestCommand(object):
         result = conn.cmd(['ceph', '--version'])
         assert result == [
             'docker', 'exec', '-i', '-u', 'root',
-            'asdf-lkjh', '/bin/sh', '-c', 'ceph --version'
+            'asdf-lkjh', '/bin/sh', '-c', '\'ceph --version\''
         ]
 
     def test_default_appends(self):
@@ -51,5 +51,5 @@ class TestCommand(object):
         result = conn.cmd(['ceph', 'health'])
         assert result == [
             'docker', 'exec', '-i',
-            'asdf-lkjh', '/bin/sh', '-c', 'ceph health'
+            'asdf-lkjh', '/bin/sh', '-c', '\'ceph health\''
         ]
