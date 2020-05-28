@@ -114,16 +114,21 @@ class TestNeedsSsh(object):
 
 
 class FakeGateway(object):
+    def __init__(self, connected=True):
+        self.connected = connected
 
     def remote_exec(self, module):
         pass
 
+    def hasreceiver(self):
+        return self.connected
 
 class TestLegacyRemoteModule(object):
 
     def setup(self):
         self.conn = backends.BaseConnection('localhost', sudo=True, eager=False)
-        self.conn.gateway = FakeGateway()
+        self.gateway = FakeGateway()
+        self.conn.gateway = self.gateway
 
     def test_importing_it_sets_it_as_remote_module(self):
         self.conn.import_module(fake_module)
@@ -147,6 +152,13 @@ class TestLegacyRemoteModule(object):
         remote_foo = self.conn.import_module(fake_module)
         remote_foo.channel = stub_channel
         assert remote_foo.function('argument') is True
+
+    def test_has_connection(self):
+        assert self.conn.has_connection() is True
+
+        # Disconnect the gateway
+        self.gateway.connected = False
+        assert self.conn.has_connection() is False
 
 
 class TestLegacyModuleExecuteArgs(object):
