@@ -41,5 +41,5 @@ class DockerConnection(BaseConnection):
 
     def cmd(self, cmd):
         tmpl = self.command_template()
-        tmpl.append("'%s'" % ' '.join(cmd))
+        tmpl.append(' '.join(cmd))
         return tmpl
