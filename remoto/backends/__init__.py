@@ -133,6 +133,11 @@ class BaseConnection(object):
             self.remote_module = LegacyModuleExecute(self.gateway, module, self.logger)
         return self.remote_module
 
+    def has_connection(self):
+        if self.gateway:
+            return self.gateway.hasreceiver()
+        return False
+
 
 class LegacyModuleExecute(object):
     """
