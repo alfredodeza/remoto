@@ -3,19 +3,19 @@ Maintainer: Ken Dreyer <kdreyer@redhat.com>
 Section: python
 Priority: optional
 Build-Depends:
- debhelper (>= 7.4.3),
+ debhelper (>= 10),
  dh-python,
- python,
- python-execnet,
- python-mock,
- python-pytest,
- python-setuptools,
-Standards-Version: 3.9.7
-X-Python-Version: >=2.7
+ python3,
+ python3-execnet,
+ python3-mock,
+ python3-pytest,
+ python3-setuptools,
+Standards-Version: 4.2.1
+X-Python-Version: >=3.7
 
-Package: python-remoto
+Package: python3-remoto
 Architecture: all
-Depends: ${misc:Depends}, ${python:Depends}
+Depends: ${misc:Depends}, ${python3:Depends}
 Description: Execute remote commands or processes
  A very simplistic remote-command-executor using ssh and Python in the remote
  end.
