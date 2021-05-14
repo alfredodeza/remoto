@@ -150,8 +150,7 @@ def _remote_check(channel, cmd, **kw):
             stdin.encode('utf-8', errors='ignore')
         stdout_stream, stderr_stream = process.communicate(stdin)
     else:
-        stdout_stream = process.stdout.read()
-        stderr_stream = process.stderr.read()
+        stdout_stream, stderr_stream = process.communicate()
 
     try:
         stdout_stream = stdout_stream.decode('utf-8')
