@@ -1,3 +1,11 @@
+1.2.1
+-----
+18-May-2021
+
+* Prevent deadlock situations by avoiding ``stderr.read()`` and
+  ``stdout.read()`` in favor of using ``communicate()``
+
+
 1.2.0
 -----
 20-Apr-2020
