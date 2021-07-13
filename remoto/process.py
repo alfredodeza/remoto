@@ -147,7 +147,7 @@ def _remote_check(channel, cmd, **kw):
 
     if stdin:
         if not isinstance(stdin, bytes):
-            stdin.encode('utf-8', errors='ignore')
+            stdin = stdin.encode('utf-8', errors='ignore')
         stdout_stream, stderr_stream = process.communicate(stdin)
     else:
         stdout_stream, stderr_stream = process.communicate()
