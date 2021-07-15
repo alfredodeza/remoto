@@ -1,6 +1,7 @@
 from mock import Mock
+from mock import patch
 from remoto import process
-
+import subprocess
 
 class TestExtendPath(object):
 
@@ -38,3 +39,19 @@ class TestExtendPath(object):
         fake_conn.receive.return_value = {'PATH': '/home/alfredo/bin'}
         result = process.extend_env(fake_conn, {'extend_env': {'CEPH_VOLUME_DEBUG': '1'}})
         assert result.get('extend_env') is None
+    
+    @patch('subprocess.Popen')
+    def test_remote_check_command_encoding_returns_bytes(self,fake_popen):
+        fake_conn = Mock()
+        fake_conn.gateway.remote_exec.return_value = fake_conn
+        fake_conn.receive.return_value = {}
+
+        test_str = "test string"
+        fake_comm = Mock()
+        fake_comm.communicate.return_value = iter([test_str,''])
+        fake_popen.return_value = fake_comm
+        
+        process._remote_check(fake_conn,cmd='', stdin=test_str) 
+
+        assert isinstance(fake_comm.communicate.call_args[0][0],bytes)
+
