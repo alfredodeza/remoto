@@ -43,3 +43,15 @@ def rsync(hosts, source, destination, logger=None, sudo=False):
         sync.add_target(conn.gateway, destination)
 
     return sync.send()
+
+
+def rsync_conn(conn, source, destination, logger=None):
+    """
+    Reuses the passed connection to rsync ``source`` to ``destination``. Uses
+    execnet under the hood.
+    """
+    logger = logger or basic_remote_logger()
+    sync = _RSync(source, logger=logger)
+    sync.add_target(conn.gateway, destination)
+
+    return sync.send()
