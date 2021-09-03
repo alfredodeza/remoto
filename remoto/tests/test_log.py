@@ -1,7 +1,10 @@
 from pytest import raises
 from remoto import log
 from remoto.exc import TimeoutError
-from mock import Mock
+try:
+    from unittest.mock import Mock
+except ImportError:
+    from mock import Mock
 
 
 class TestReporting(object):

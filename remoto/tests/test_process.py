@@ -1,5 +1,7 @@
-from mock import Mock
-from mock import patch
+try:
+    from unittest.mock import Mock, patch
+except ImportError:
+    from mock import Mock, patch
 from remoto import process
 import subprocess
 
