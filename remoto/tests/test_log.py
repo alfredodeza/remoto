@@ -7,7 +7,7 @@ except ImportError:
     from mock import Mock
 
 
-class TestReporting(object):
+class TestReporting:
 
     def test_reporting_when_channel_is_empty(self):
         conn = Mock()
