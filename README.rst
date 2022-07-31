@@ -47,7 +47,6 @@ The ``run`` helper will display the ``stderr`` and ``stdout`` as ``ERROR`` and
 For other types of usage (like checking exit status codes, or raising upon
 them) ``remoto`` does provide them too.
 
-
 Remote Commands
 ===============
 
