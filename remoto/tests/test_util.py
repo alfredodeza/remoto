@@ -18,7 +18,7 @@ class TestAdminCommand(object):
 
 class TestRemoteError(object):
 
-    def setup(self):
+    def setup_method(self):
         self.traceback = ('\n').join([
             'Traceback (most recent call last):',
             '  File "<string>", line 1, in <module>',

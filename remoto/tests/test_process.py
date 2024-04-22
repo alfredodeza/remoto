@@ -7,7 +7,7 @@ import subprocess
 
 class TestExtendPath(object):
 
-    def setup(self):
+    def setup_method(self):
         self.path = '/usr/local/bin:/bin:/usr/bin:/usr/local/sbin:/usr/sbin:/sbin'
 
     def test_no_environment_sets_path(self):
